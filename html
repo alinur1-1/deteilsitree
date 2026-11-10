@@ -1,0 +1,3472 @@
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import {
+  Car, Calendar, Clock, MapPin, Phone, Star, Sparkles, ShieldCheck,
+  ChevronRight, ChevronLeft, Check, X, Plus, Trash2, Edit3, Lock,
+  Unlock, Settings, Database, Upload, ExternalLink, MessageSquare,
+  Send, User, Search, Filter, CheckCircle2, AlertCircle, Info,
+  Smartphone, Share2, Download, RefreshCw, Layers, Grid, Wrench,
+  Droplets, Zap, Award, Eye, Copy, Terminal, Navigation, ArrowRight,
+  Sliders, HelpCircle, LogOut, Menu, ChevronDown, Image as ImageIcon,
+  Link2, CheckCheck, Compass, Crown, Building2
+} from 'lucide-react';
+
+// ============================================================================
+// 1. ЦЕНТРАЛЬНЫЙ РЕЕСТР САЛОНОВ И ДЕТЕЙЛИНГОВ (STUDIO_REGISTRY — ?v=slug)
+// ============================================================================
+// Вы можете менять логотипы (logoUrl), главное фото (heroImage), цвета,
+// адреса и нижнюю галерею реальных работ (portfolioImages) прямо здесь
+// ИЛИ через встроенный интерфейс сайта без правок кода.
+// Доступ к любому салону по ссылке: https://ваш-сайт/?v=restart (или ?v=garage и т.д.)
+
+const getTodayStr = (offsetDays = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+export const STUDIO_REGISTRY = [
+  {
+    id: 'biz-restart',
+    slug: 'restart', // Ссылка: /?v=restart
+    aliases: ['restart-detailing', 'restart'],
+    name: 'Restart Detailing Atelier',
+    shortName: 'RESTART',
+    monogram: 'RD',
+    // Прямая ссылка на логотип (оставьте пустой '' для отображения люксовой монограммы или вставьте URL логотипа PNG/SVG/JPG)
+    logoUrl: 'https://images.unsplash.com/photo-1618843479319-561729166651?auto=format&fit=crop&w=240&q=80',
+    category: 'Бутик автоэстетики • Антигравийная пленка • Керамика',
+    address: 'г. Алматы, пр. Аль-Фараби, 140а/3 (Esentai City)',
+    phone: '+7 (707) 880-45-90',
+    rating: 4.9,
+    reviews_count: 342,
+    boxes_count: 3,
+    accent_color: '#D4AF37', // Soft Champagne Gold
+    work_start: '09:00',
+    work_end: '21:00',
+    admin_pin: '0000',
+    // ОДНА ГЛАВНАЯ КРАСИВАЯ ФОТОГРАФИЯ (Hero Showcase)
+    hero_image: 'https://images.unsplash.com/photo-1618843479319-561729166651?auto=format&fit=crop&w=1800&q=85',
+    hero_caption: 'Эталонный уход за коллекционными и премиальными автомобилями в Алматы',
+    // НИЖНЯЯ ГАЛЕРЕЯ РЕАЛЬНЫХ РАБОТ (пополняется по ссылке в 1 клик)
+    portfolio_images: [
+      {
+        url: 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&w=1000&q=85',
+        title: 'Porsche 911 GT3 — Полная оклейка матовым полиуретаном Llumar Platinum',
+        car: 'Porsche 911 GT3',
+        tag: 'Бронепленка PPF'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&w=1000&q=85',
+        title: 'Zeekr 001 — Трехфазная детейлинг-мойка и консервация кожи Nappa',
+        car: 'Zeekr 001 FR',
+        tag: 'Детейлинг-уход'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=1000&q=85',
+        title: 'BMW M5 Competition — Зеркальная восстановительная полировка + Керамика 9H',
+        car: 'BMW M5 F90',
+        tag: 'Полировка и Керамика'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=1000&q=85',
+        title: 'Mercedes-AMG G63 — Глубокая химчистка интерьера с реставрацией кожи LeTech',
+        car: 'Mercedes-AMG G63',
+        tag: 'Химчистка салона'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1000&q=85',
+        title: 'Porsche Taycan Turbo S — Нанесение гидрофобного состава на всю полусферу',
+        car: 'Porsche Taycan',
+        tag: 'Детейлинг'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=1000&q=85',
+        title: 'Ferrari F8 Tributo — Защита карбоновых элементов и зон риска пленкой SunTek',
+        car: 'Ferrari F8',
+        tag: 'Бронепленка PPF'
+      }
+    ]
+  },
+  {
+    id: 'biz-garage',
+    slug: 'garage', // Ссылка: /?v=garage
+    aliases: ['garage-detailing', 'garage'],
+    name: 'Garage Detailing & Spa',
+    shortName: 'GARAGE',
+    monogram: 'GD',
+    logoUrl: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=240&q=80',
+    category: 'Премиальный детейлинг-клуб • Полировка • Автомойка',
+    address: 'г. Алматы, ул. Сатпаева, 90/20 (ТРК ADK)',
+    phone: '+7 (701) 555-12-34',
+    rating: 4.8,
+    reviews_count: 218,
+    boxes_count: 2,
+    accent_color: '#60A5FA', // Soft Ice Sapphire
+    work_start: '09:00',
+    work_end: '21:00',
+    admin_pin: '0000',
+    hero_image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1800&q=85',
+    hero_caption: 'Индивидуальный детейлинг-уход, керамические покрытия и бережная мойка',
+    portfolio_images: [
+      {
+        url: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=1000&q=85',
+        title: 'LiXiang L9 Max — Керамическое покрытие в 3 слоя Krytex Mega 9H',
+        car: 'LiXiang L9',
+        tag: 'Полировка и Керамика'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=1000&q=85',
+        title: 'Audi RS6 Avant — Детейлинг подвески и моторного отсека диэлектриком',
+        car: 'Audi RS6',
+        tag: 'Детейлинг'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=1000&q=85',
+        title: 'BMW X7 M60i — Антидождь Aquapel на всю полусферу + трехфазная мойка',
+        car: 'BMW X7 M60i',
+        tag: 'Мойка Люкс'
+      }
+    ]
+  },
+  {
+    id: 'biz-svoi',
+    slug: 'svoi', // Ссылка: /?v=svoi
+    aliases: ['svoi-detailing', 'svoi'],
+    name: 'SVOI Detailing Lounge',
+    shortName: 'SVOI',
+    monogram: 'SV',
+    logoUrl: 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=240&q=80',
+    category: 'Студия автоэстетики • Реставрация кожи • Шумоизоляция',
+    address: 'г. Алматы, пр. Достык, 248 (выше Хаджи Мукана)',
+    phone: '+7 (747) 990-77-11',
+    rating: 5.0,
+    reviews_count: 189,
+    boxes_count: 4,
+    accent_color: '#34D399', // Soft Jade Emerald
+    work_start: '09:00',
+    work_end: '21:00',
+    admin_pin: '0000',
+    hero_image: 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=1800&q=85',
+    hero_caption: 'Клубная атмосфера, 4 просторных бокса и безупречная чистота вашего авто',
+    portfolio_images: [
+      {
+        url: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1000&q=85',
+        title: 'Range Rover Autobiography — Детейлинг светлой кожи LeTech и озонация',
+        car: 'Range Rover SV',
+        tag: 'Химчистка'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&w=1000&q=85',
+        title: 'Lexus LX600 VIP — Оклейка зон риска антигравийной пленкой SunTek',
+        car: 'Lexus LX600',
+        tag: 'Бронепленка PPF'
+      }
+    ]
+  },
+  {
+    id: 'biz-easy',
+    slug: 'easy-spa', // Ссылка: /?v=easy-spa
+    aliases: ['easy-auto-spa', 'easy-spa'],
+    name: 'Easy Auto Spa & Concierge',
+    shortName: 'EASY SPA',
+    monogram: 'EA',
+    logoUrl: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=240&q=80',
+    category: 'Трёхфазная SPA-мойка • Экспресс-детейлинг кузова',
+    address: 'г. Алматы, ул. Розыбакиева, 247а (Mega Center Alma-Ata)',
+    phone: '+7 (708) 310-00-22',
+    rating: 4.9,
+    reviews_count: 412,
+    boxes_count: 3,
+    accent_color: '#E879F9', // Soft Velvet Orchid / Rose Platinum
+    work_start: '09:00',
+    work_end: '21:00',
+    admin_pin: '0000',
+    hero_image: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1800&q=85',
+    hero_caption: 'Быстрая бережная SPA-мойка в 3 фазы с кварцевой консервацией без очередей',
+    portfolio_images: [
+      {
+        url: 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&w=1000&q=85',
+        title: 'Трёхфазная нано-мойка KochChemie с консервацией жидким кварцем',
+        car: 'Mercedes S-Class W223',
+        tag: 'SPA-Мойка'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&w=1000&q=85',
+        title: 'Toyota Camry 75 — Экспресс-полировка и твердый воск Карнауба',
+        car: 'Toyota Camry 75',
+        tag: 'Полировка'
+      }
+    ]
+  }
+];
+
+const INITIAL_SERVICES = [
+  // Restart Detailing Services
+  {
+    id: 'srv-1',
+    business_id: 'biz-restart',
+    title: 'Трёхфазная SPA-мойка KochChemie',
+    description: 'Бережная бесконтактная и ручная мойка кузова, чистка дисков, продувка замков турбосушкой, уход за резиной и деликатная уборка салона.',
+    price: 12000,
+    duration_minutes: 60,
+    category: 'Мойка',
+    popular: true
+  },
+  {
+    id: 'srv-2',
+    business_id: 'biz-restart',
+    title: 'Комплекс «Мойка Люкс + Кварцевая защита Gyeon»',
+    description: 'Трехфазная мойка кузова, гидрофобная кварцевая консервация ЛКП на 60 дней, глубокая уборка кожи и матового пластика.',
+    price: 22000,
+    duration_minutes: 90,
+    category: 'Мойка',
+    popular: true
+  },
+  {
+    id: 'srv-3',
+    business_id: 'biz-restart',
+    title: 'Детейлинг моторного отсека диэлектриком',
+    description: 'Безопасная консервация и чистка двигателя диэлектрическим гелем Koch Golden Star с сушкой и защитой патрубков.',
+    price: 18000,
+    duration_minutes: 60,
+    category: 'Детейлинг',
+    popular: false
+  },
+  {
+    id: 'srv-4',
+    business_id: 'biz-restart',
+    title: 'Восстановительная полировка + Керамика 9H (2 слоя)',
+    description: 'Удаление до 95% микроцарапин и голограмм системой Rupes, обезжиривание и нанесение двух слоев нанокерамики.',
+    price: 145000,
+    duration_minutes: 240,
+    category: 'Полировка и Керамика',
+    popular: true
+  },
+  {
+    id: 'srv-5',
+    business_id: 'biz-restart',
+    title: 'Детейлинг-химчистка салона + Пропитка кожи LeTech',
+    description: 'Глубокая гипоаллергенная чистка кожи, алькантары, потолка и ковролина, озонация салона и премиальный крем для кожи.',
+    price: 65000,
+    duration_minutes: 180,
+    category: 'Химчистка',
+    popular: false
+  },
+  {
+    id: 'srv-6',
+    business_id: 'biz-restart',
+    title: 'Бронирование зон риска полиуретаном Llumar',
+    description: 'Оклейка капота, бампера, крыльев, оптики, стоек и зон под ручками прозрачной бронепленкой 200 мкм.',
+    price: 260000,
+    duration_minutes: 240,
+    category: 'Детейлинг',
+    popular: true
+  },
+
+  // Garage Detailing Services
+  {
+    id: 'srv-g1',
+    business_id: 'biz-garage',
+    title: 'Двухфазная комплексная мойка (Кузов + Интерьер)',
+    description: 'Бережная мойка немецкой химией, пылесос салона и багажника, протирка стекол и чернение шин.',
+    price: 8500,
+    duration_minutes: 60,
+    category: 'Мойка',
+    popular: true
+  },
+  {
+    id: 'srv-g2',
+    business_id: 'biz-garage',
+    title: 'Детейлинг-очистка дисков и удаление битума с кузова',
+    description: 'Глубокая деконтаминация кузова и колесных дисков от металлических вкраплений (Iron Off) и дорожного реагента.',
+    price: 16000,
+    duration_minutes: 90,
+    category: 'Детейлинг',
+    popular: false
+  },
+  {
+    id: 'srv-g3',
+    business_id: 'biz-garage',
+    title: 'Глянцевая полировка + Японский воск Soft99',
+    description: 'Придание глубокого карамельного блеска автомобилю и защита карнаубским воском на 3–4 месяца.',
+    price: 55000,
+    duration_minutes: 180,
+    category: 'Полировка и Керамика',
+    popular: true
+  },
+  {
+    id: 'srv-g4',
+    business_id: 'biz-garage',
+    title: 'Полная детейлинг-химчистка интерьера с озонацией',
+    description: 'Бережная чистка всех поверхностей салона с удалением запахов и антибактериальной обработкой.',
+    price: 58000,
+    duration_minutes: 180,
+    category: 'Химчистка',
+    popular: false
+  },
+
+  // SVOI Detailing Services
+  {
+    id: 'srv-s1',
+    business_id: 'biz-svoi',
+    title: 'Детейлинг-мойка SVOI Signature (3 фазы + Турбосушка)',
+    description: 'Эталонная мойка пористыми губками, продувка всех зазоров теплым воздухом и консервация внешнего пластика.',
+    price: 14000,
+    duration_minutes: 90,
+    category: 'Мойка',
+    popular: true
+  },
+  {
+    id: 'srv-s2',
+    business_id: 'biz-svoi',
+    title: 'Антидождь Aquapel на всю полусферу стекол',
+    description: 'Полировка стекол от водного камня и нанесение оригинального фторполимерного покрытия на 6 месяцев.',
+    price: 20000,
+    duration_minutes: 60,
+    category: 'Детейлинг',
+    popular: true
+  },
+  {
+    id: 'srv-s3',
+    business_id: 'biz-svoi',
+    title: 'Бронирование лобового стекла пленкой ClearPlex',
+    description: 'Невидимая защита дорогого лобового стекла с проекцией от сколов и трещин на трассе.',
+    price: 95000,
+    duration_minutes: 120,
+    category: 'Детейлинг',
+    popular: true
+  },
+
+  // Easy Auto Spa Services
+  {
+    id: 'srv-e1',
+    business_id: 'biz-easy',
+    title: 'Экспресс 3-фазная SPA-Мойка + Кварц',
+    description: 'Быстрая и безопасная трехфазная мойка кузова с гидрофобным воском и полной уборкой салона.',
+    price: 7500,
+    duration_minutes: 60,
+    category: 'Мойка',
+    popular: true
+  },
+  {
+    id: 'srv-e2',
+    business_id: 'biz-easy',
+    title: 'Экспресс-химчистка сидений и дверных карт',
+    description: 'Локальная глубокая чистка всех посадочных мест и дверных обшивок с сушкой за 2 часа.',
+    price: 28000,
+    duration_minutes: 120,
+    category: 'Химчистка',
+    popular: true
+  },
+  {
+    id: 'srv-e3',
+    business_id: 'biz-easy',
+    title: 'Полировка фар + Бронирование полиуретаном',
+    description: 'Восстановление прозрачности оптики и защита пленкой от пескоструя на 5 лет.',
+    price: 25000,
+    duration_minutes: 90,
+    category: 'Полировка и Керамика',
+    popular: false
+  }
+];
+
+const INITIAL_BOOKINGS = [
+  {
+    id: 'BK-9041',
+    business_id: 'biz-restart',
+    service_ids: ['srv-4'],
+    service_titles: ['Восстановительная полировка + Керамика 9H (2 слоя)'],
+    client_name: 'Алишер Нурланов',
+    client_phone: '+7 (701) 777-88-99',
+    car_model: 'Zeekr 001 You Edition',
+    car_plate: '001 ZKR 02',
+    date: getTodayStr(0),
+    start_time: '14:00',
+    end_time: '18:00',
+    duration_minutes: 240,
+    box_number: 1,
+    total_price: 145000,
+    source: 'web',
+    status: 'В работе'
+  },
+  {
+    id: 'BK-9042',
+    business_id: 'biz-restart',
+    service_ids: ['srv-1', 'srv-3'],
+    service_titles: ['Трёхфазная SPA-мойка KochChemie', 'Детейлинг моторного отсека диэлектриком'],
+    client_name: 'Тимур Сейтказин',
+    client_phone: '+7 (707) 210-44-11',
+    car_model: 'BMW X5 M60i',
+    car_plate: '777 BMW 02',
+    date: getTodayStr(0),
+    start_time: '11:00',
+    end_time: '13:00',
+    duration_minutes: 120,
+    box_number: 2,
+    total_price: 30000,
+    source: 'ai_chat',
+    status: 'Новая'
+  },
+  {
+    id: 'BK-9043',
+    business_id: 'biz-restart',
+    service_ids: ['srv-5'],
+    service_titles: ['Детейлинг-химчистка салона + Пропитка кожи LeTech'],
+    client_name: 'Диана Касымова',
+    client_phone: '+7 (777) 500-19-20',
+    car_model: 'Porsche Cayenne Coupe',
+    car_plate: '888 DKA 02',
+    date: getTodayStr(0),
+    start_time: '14:00',
+    end_time: '17:00',
+    duration_minutes: 180,
+    box_number: 2,
+    total_price: 65000,
+    source: 'manual',
+    status: 'В работе'
+  },
+  {
+    id: 'BK-9044',
+    business_id: 'biz-restart',
+    service_ids: ['srv-2'],
+    service_titles: ['Комплекс «Мойка Люкс + Кварцевая защита Gyeon»'],
+    client_name: 'Ержан Болатов',
+    client_phone: '+7 (702) 333-41-12',
+    car_model: 'LiXiang L9 Max',
+    car_plate: '999 LIX 02',
+    date: getTodayStr(1),
+    start_time: '18:00',
+    end_time: '19:30',
+    duration_minutes: 90,
+    box_number: 1,
+    total_price: 22000,
+    source: 'ai_chat',
+    status: 'Новая'
+  }
+];
+
+// ============================================================================
+// 2. TIME & OVERBOOKING PROTECTION UTILITIES
+// ============================================================================
+
+const timeToMinutes = (t) => {
+  if (!t) return 0;
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+};
+
+const minutesToTime = (mins) => {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+};
+
+const formatPrice = (num) => {
+  return new Intl.NumberFormat('ru-KZ').format(num || 0) + ' ₸';
+};
+
+const formatDuration = (mins) => {
+  if (!mins) return '0 мин';
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h > 0 && m > 0) return `${h} ч ${m} мин`;
+  if (h > 0) return `${h} ч`;
+  return `${m} мин`;
+};
+
+const formatPhoneMask = (raw) => {
+  const digits = raw.replace(/\D/g, '');
+  let clean = digits;
+  if (clean.startsWith('8')) clean = '7' + clean.slice(1);
+  if (!clean.startsWith('7') && clean.length > 0) clean = '7' + clean;
+  clean = clean.slice(0, 11);
+
+  if (clean.length === 0) return '';
+  if (clean.length <= 1) return `+7 `;
+  if (clean.length <= 4) return `+7 (${clean.slice(1)}`;
+  if (clean.length <= 7) return `+7 (${clean.slice(1, 4)}) ${clean.slice(4)}`;
+  if (clean.length <= 9) return `+7 (${clean.slice(1, 4)}) ${clean.slice(4, 7)}-${clean.slice(7)}`;
+  return `+7 (${clean.slice(1, 4)}) ${clean.slice(4, 7)}-${clean.slice(7, 9)}-${clean.slice(9, 11)}`;
+};
+
+const checkBoxAvailability = (boxNumber, dateStr, startMin, durationMin, bookings, business) => {
+  const closeMin = timeToMinutes(business.work_end || '21:00');
+  const endMin = startMin + durationMin;
+
+  if (endMin > closeMin) {
+    return {
+      available: false,
+      reason: `До закрытия (${business.work_end || '21:00'}) не хватит времени`
+    };
+  }
+
+  const dayBookings = bookings.filter(
+    (b) =>
+      b.business_id === business.id &&
+      b.date === dateStr &&
+      b.box_number === boxNumber &&
+      b.status !== 'Отменена'
+  );
+
+  for (const b of dayBookings) {
+    const bStart = timeToMinutes(b.start_time);
+    const bEnd = timeToMinutes(b.end_time);
+    if (startMin < bEnd && endMin > bStart) {
+      if (startMin >= bStart && startMin < bEnd) {
+        return {
+          available: false,
+          reason: `Занят (${b.start_time}–${b.end_time})`,
+          conflictBooking: b
+        };
+      } else {
+        return {
+          available: false,
+          reason: `Окно до ${b.start_time} слишком короткое`,
+          conflictBooking: b
+        };
+      }
+    }
+  }
+
+  return { available: true, reason: 'Свободно' };
+};
+
+const evaluateSlotAcrossBoxes = (
+  dateStr,
+  slotTimeStr,
+  durationMin,
+  selectedBoxPreference,
+  bookings,
+  business
+) => {
+  const startMin = timeToMinutes(slotTimeStr);
+  const effDuration = Math.max(durationMin || 60, 30);
+  const totalBoxes = business.boxes_count || 1;
+
+  if (selectedBoxPreference !== 'auto') {
+    const boxNum = Number(selectedBoxPreference);
+    const res = checkBoxAvailability(boxNum, dateStr, startMin, effDuration, bookings, business);
+    return {
+      ...res,
+      assignedBox: res.available ? boxNum : null,
+      endTimeStr: minutesToTime(startMin + effDuration),
+      freeBoxesCount: res.available ? 1 : 0
+    };
+  }
+
+  const freeBoxes = [];
+  let firstReason = 'Занято';
+
+  for (let b = 1; b <= totalBoxes; b++) {
+    const check = checkBoxAvailability(b, dateStr, startMin, effDuration, bookings, business);
+    if (check.available) {
+      freeBoxes.push(b);
+    } else if (b === 1 || firstReason.startsWith('Занят')) {
+      firstReason = check.reason;
+    }
+  }
+
+  if (freeBoxes.length > 0) {
+    return {
+      available: true,
+      assignedBox: freeBoxes[0],
+      freeBoxes,
+      freeBoxesCount: freeBoxes.length,
+      endTimeStr: minutesToTime(startMin + effDuration),
+      reason: `Свободен Бокс №${freeBoxes[0]}`
+    };
+  }
+
+  return {
+    available: false,
+    assignedBox: null,
+    freeBoxes: [],
+    freeBoxesCount: 0,
+    endTimeStr: minutesToTime(startMin + effDuration),
+    reason: firstReason
+  };
+};
+
+const generateTimeSlots = (workStart = '09:00', workEnd = '21:00', stepMinutes = 30) => {
+  const start = timeToMinutes(workStart);
+  const end = timeToMinutes(workEnd);
+  const slots = [];
+  for (let m = start; m <= end - stepMinutes; m += stepMinutes) {
+    slots.push(minutesToTime(m));
+  }
+  return slots;
+};
+
+const getNext7Days = () => {
+  const days = [];
+  const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+  const monthNames = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    const dateStr = getTodayStr(i);
+    days.push({
+      dateStr,
+      dayName: i === 0 ? 'Сегодня' : i === 1 ? 'Завтра' : dayNames[d.getDay()],
+      dayNumber: d.getDate(),
+      monthName: monthNames[d.getMonth()],
+      isWeekend: d.getDay() === 0 || d.getDay() === 6
+    });
+  }
+  return days;
+};
+
+// ============================================================================
+// 3. DETERMINISTIC + GEMINI AI CONCIERGE ENGINE
+// ============================================================================
+
+const callGeminiBookingAssistant = async ({
+  userMessage,
+  business,
+  services,
+  bookings,
+  daysList
+}) => {
+  const lower = userMessage.toLowerCase();
+
+  let targetDateObj = daysList[0];
+  if (lower.includes('завтра') && !lower.includes('послезавтра')) {
+    targetDateObj = daysList[1] || daysList[0];
+  } else if (lower.includes('послезавтра')) {
+    targetDateObj = daysList[2] || daysList[0];
+  } else {
+    for (const d of daysList) {
+      if (lower.includes(d.dayName.toLowerCase())) {
+        targetDateObj = d;
+        break;
+      }
+    }
+  }
+
+  let minHour = 9;
+  const timeMatch = lower.match(/(\d{1,2})[:.](\d{2})/);
+  const afterMatch = lower.match(/после\s+(\d{1,2})/);
+  const atHourMatch = lower.match(/в\s+(\d{1,2})\s*(час|ч|вечер|утр|дн)?/);
+
+  if (timeMatch) {
+    minHour = parseInt(timeMatch[1], 10);
+    if (minHour < 8 && (lower.includes('вечер') || lower.includes('после'))) minHour += 12;
+  } else if (afterMatch) {
+    minHour = parseInt(afterMatch[1], 10);
+    if (minHour < 9) minHour += 12;
+  } else if (atHourMatch) {
+    minHour = parseInt(atHourMatch[1], 10);
+    if (minHour < 9) minHour += 12;
+  } else if (lower.includes('вечер')) {
+    minHour = 18;
+  } else if (lower.includes('обед') || lower.includes('днем')) {
+    minHour = 13;
+  }
+
+  let matchedService = services[0];
+  if (lower.includes('полиров') || lower.includes('керамик')) {
+    matchedService = services.find((s) => s.category.includes('Полировка') || s.title.toLowerCase().includes('полиров')) || services[0];
+  } else if (lower.includes('химчист') || lower.includes('салон') || lower.includes('кож')) {
+    matchedService = services.find((s) => s.category === 'Химчистка' || s.title.toLowerCase().includes('химчист')) || services[0];
+  } else if (lower.includes('пленк') || lower.includes('брон') || lower.includes('антиграв')) {
+    matchedService = services.find((s) => s.title.toLowerCase().includes('брон') || s.title.toLowerCase().includes('пленк')) || services[0];
+  } else if (lower.includes('двигат') || lower.includes('мотор')) {
+    matchedService = services.find((s) => s.title.toLowerCase().includes('мотор') || s.category === 'Детейлинг') || services[0];
+  } else if (lower.includes('кварц') || lower.includes('люкс')) {
+    matchedService = services.find((s) => s.title.toLowerCase().includes('люкс') || s.title.toLowerCase().includes('кварц')) || services[0];
+  } else if (lower.includes('мойк') || lower.includes('помыт')) {
+    matchedService = services.find((s) => s.category === 'Мойка') || services[0];
+  }
+
+  const allSlots = generateTimeSlots(business.work_start, business.work_end, 30);
+  const candidateSlots = allSlots.filter((s) => timeToMinutes(s) >= minHour * 60);
+
+  let bestSlotEval = null;
+  let chosenSlotStr = null;
+
+  for (const s of candidateSlots) {
+    const ev = evaluateSlotAcrossBoxes(
+      targetDateObj.dateStr,
+      s,
+      matchedService?.duration_minutes || 60,
+      'auto',
+      bookings,
+      business
+    );
+    if (ev.available) {
+      bestSlotEval = ev;
+      chosenSlotStr = s;
+      break;
+    }
+  }
+
+  let fallbackNote = '';
+  if (!bestSlotEval) {
+    for (const s of allSlots) {
+      const ev = evaluateSlotAcrossBoxes(
+        targetDateObj.dateStr,
+        s,
+        matchedService?.duration_minutes || 60,
+        'auto',
+        bookings,
+        business
+      );
+      if (ev.available) {
+        bestSlotEval = ev;
+        chosenSlotStr = s;
+        fallbackNote = `Так как услуга занимает ${formatDuration(matchedService?.duration_minutes || 60)}, после ${minHour}:00 мы не успеем до закрытия (${business.work_end}). Ближайшее свободное окно:`;
+        break;
+      }
+    }
+  }
+
+  const proposal = bestSlotEval && matchedService ? {
+    service: matchedService,
+    dateStr: targetDateObj.dateStr,
+    dayLabel: `${targetDateObj.dayName}, ${targetDateObj.dayNumber} ${targetDateObj.monthName}`,
+    startTime: chosenSlotStr,
+    endTime: bestSlotEval.endTimeStr,
+    boxNumber: bestSlotEval.assignedBox,
+    price: matchedService.price,
+    durationMinutes: matchedService.duration_minutes
+  } : null;
+
+  const apiKey = "";
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+  const catalogText = services
+    .map((s) => `- ${s.title}: ${formatPrice(s.price)}, длительность ${s.duration_minutes} мин`)
+    .join('\n');
+
+  const systemPrompt = `Ты — персональный ИИ-консьерж премиальной детейлинг-студии "${business.name}" (${business.address}, Алматы).
+Твой тон: мягкий, деликатный, уважительный (Quiet Luxury).
+Прайс-лист:
+${catalogText}
+
+Найденное свободное окно:
+${proposal ? `Услуга: "${proposal.service.title}", Дата: ${proposal.dayLabel}, Время: ${proposal.startTime}–${proposal.endTime}, Бокс №${proposal.boxNumber}, Стоимость: ${formatPrice(proposal.price)} (${proposal.durationMinutes} мин). ${fallbackNote}` : 'На это время все боксы заняты.'}
+
+Ответь лаконично (2-3 предложения) и предложи подтвердить визит в 1 клик по карточке ниже.`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: userMessage }] }],
+        systemInstruction: { parts: [{ text: systemPrompt }] }
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (aiText) {
+        return { text: aiText, proposal };
+      }
+    }
+  } catch (e) {}
+
+  if (lower.includes('сколько стоит') || lower.includes('цен') || lower.includes('прайс')) {
+    const priceSummary = services
+      .slice(0, 4)
+      .map((s) => `• ${s.title} — ${formatPrice(s.price)} (${formatDuration(s.duration_minutes)})`)
+      .join('\n');
+    return {
+      text: `В ателье ${business.name} действуют следующие тарифы:\n${priceSummary}\n\n${
+        proposal
+          ? `Могу забронировать для вас «${proposal.service.title}» на ${proposal.dayLabel.toLowerCase()} в ${proposal.startTime} (Бокс №${proposal.boxNumber}).`
+          : ''
+      }`,
+      proposal
+    };
+  }
+
+  if (proposal) {
+    return {
+      text: `${fallbackNote ? fallbackNote + ' ' : ''}Проверил расписание боксов ${business.name}. Для вас свободно окно на «${proposal.service.title}» — ${proposal.dayLabel.toLowerCase()} в ${proposal.startTime}–{proposal.endTime} (${formatPrice(proposal.price)}, Бокс №${proposal.boxNumber}).\n\nВы можете подтвердить бронь в одно касание ниже:`.replace('{proposal.endTime}', proposal.endTime),
+      proposal
+    };
+  }
+
+  return {
+    text: `На выбранное время все боксы заняты. Пожалуйста, выберите другой день или слот в расписании.`,
+    proposal: null
+  };
+};
+
+// ============================================================================
+// 4. REUSABLE STUDIO LOGO COMPONENT (SUPPORTS IMAGE URL OR LUXURY MONOGRAM)
+// ============================================================================
+
+function StudioLogo({ business, size = 'md', onClick }) {
+  const [imgFailed, setImgFailed] = useState(false);
+
+  useEffect(() => {
+    setImgFailed(false);
+  }, [business?.logoUrl]);
+
+  const sizeClasses =
+    size === 'lg'
+      ? 'w-14 h-14 sm:w-16 sm:h-16 rounded-2xl text-base'
+      : size === 'sm'
+      ? 'w-8 h-8 rounded-xl text-xs'
+      : 'w-11 h-11 rounded-2xl text-sm';
+
+  const hasValidLogo = Boolean(business?.logoUrl && !imgFailed);
+
+  return (
+    <div
+      onClick={onClick}
+      className={`relative ${sizeClasses} shrink-0 overflow-hidden bg-zinc-900/90 border border-white/[0.12] flex items-center justify-center shadow-inner select-none ${
+        onClick ? 'cursor-pointer hover:border-white/30 transition' : ''
+      }`}
+      style={{
+        boxShadow: `0 8px 24px -6px rgba(0,0,0,0.7), inset 0 1px 0 0 rgba(255,255,255,0.12)`
+      }}
+      title={onClick ? 'Нажмите, чтобы изменить логотип по ссылке' : business?.name}
+    >
+      {hasValidLogo ? (
+        <img
+          src={business.logoUrl}
+          alt={business.name}
+          onError={() => setImgFailed(true)}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <span
+          className="font-bold tracking-widest"
+          style={{ color: business?.accent_color || '#D4AF37' }}
+        >
+          {business?.monogram || business?.name?.slice(0, 2).toUpperCase()}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// 5. MAIN APPLICATION COMPONENT
+// ============================================================================
+
+export default function App() {
+  // --- Persistent Multi-Tenant Registry State ---
+  const [businesses, setBusinesses] = useState(() => {
+    try {
+      const saved = localStorage.getItem('autospa_luxury_registry_v2');
+      return saved ? JSON.parse(saved) : STUDIO_REGISTRY;
+    } catch {
+      return STUDIO_REGISTRY;
+    }
+  });
+
+  const [services, setServices] = useState(() => {
+    try {
+      const saved = localStorage.getItem('autospa_luxury_services_v2');
+      return saved ? JSON.parse(saved) : INITIAL_SERVICES;
+    } catch {
+      return INITIAL_SERVICES;
+    }
+  });
+
+  const [bookings, setBookings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('autospa_luxury_bookings_v2');
+      return saved ? JSON.parse(saved) : INITIAL_BOOKINGS;
+    } catch {
+      return INITIAL_BOOKINGS;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('autospa_luxury_registry_v2', JSON.stringify(businesses));
+    } catch (e) {}
+  }, [businesses]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('autospa_luxury_services_v2', JSON.stringify(services));
+    } catch (e) {}
+  }, [services]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('autospa_luxury_bookings_v2', JSON.stringify(bookings));
+    } catch (e) {}
+  }, [bookings]);
+
+  // --- Resolve Active Studio via ?v=slug (or ?b=slug) ---
+  const [activeSlug, setActiveSlug] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('v') || params.get('b') || params.get('studio') || 'restart';
+    } catch {
+      return 'restart';
+    }
+  });
+
+  const activeBusiness = useMemo(() => {
+    const query = activeSlug.toLowerCase();
+    return (
+      businesses.find(
+        (b) =>
+          b.slug.toLowerCase() === query ||
+          (b.aliases && b.aliases.map((a) => a.toLowerCase()).includes(query))
+      ) || businesses[0]
+    );
+  }, [businesses, activeSlug]);
+
+  // Dynamically update document.title when switching ?v= studio
+  useEffect(() => {
+    if (activeBusiness) {
+      document.title = `${activeBusiness.name} — Онлайн-запись (?v=${activeBusiness.slug})`;
+    }
+  }, [activeBusiness]);
+
+  const activeServices = useMemo(() => {
+    return services.filter((s) => s.business_id === activeBusiness.id);
+  }, [services, activeBusiness]);
+
+  const activeBookings = useMemo(() => {
+    return bookings.filter((b) => b.business_id === activeBusiness.id);
+  }, [bookings, activeBusiness]);
+
+  // --- UI Mode & Modals ---
+  const [viewMode, setViewMode] = useState('client'); // 'client' | 'admin'
+  const [adminUnlocked, setAdminUnlocked] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [adminTab, setAdminTab] = useState('schedule'); // 'schedule' | 'branding' | 'services'
+
+  const [showRegistryModal, setShowRegistryModal] = useState(false);
+  const [showLogoQuickModal, setShowLogoQuickModal] = useState(false);
+  const [showAddWorkPhotoModal, setShowAddWorkPhotoModal] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const showToast = (msg, type = 'success') => {
+    setToastMessage({ msg, type });
+    setTimeout(() => setToastMessage(null), 3800);
+  };
+
+  // --- Booking Concierge State ---
+  const daysList = useMemo(() => getNext7Days(), []);
+  const [selectedCategory, setSelectedCategory] = useState('Все');
+  const [selectedServiceIds, setSelectedServiceIds] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(daysList[0].dateStr);
+  const [selectedBoxPref, setSelectedBoxPref] = useState('auto');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
+
+  // Client Contact Form
+  const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [carModel, setCarModel] = useState('');
+  const [carPlate, setCarPlate] = useState('');
+  const [confirmedTicket, setConfirmedTicket] = useState(null);
+  const [formError, setFormError] = useState('');
+
+  useEffect(() => {
+    const bizSrv = services.filter((s) => s.business_id === activeBusiness.id);
+    if (bizSrv.length > 0) {
+      setSelectedServiceIds([bizSrv[0].id]);
+    } else {
+      setSelectedServiceIds([]);
+    }
+    setSelectedTimeSlot(null);
+    setConfirmedTicket(null);
+  }, [activeBusiness.id]);
+
+  const selectedServicesList = useMemo(() => {
+    return activeServices.filter((s) => selectedServiceIds.includes(s.id));
+  }, [activeServices, selectedServiceIds]);
+
+  const totalDurationMinutes = useMemo(() => {
+    const sum = selectedServicesList.reduce((acc, s) => acc + Number(s.duration_minutes || 60), 0);
+    return sum > 0 ? sum : 60;
+  }, [selectedServicesList]);
+
+  const totalPrice = useMemo(() => {
+    return selectedServicesList.reduce((acc, s) => acc + Number(s.price || 0), 0);
+  }, [selectedServicesList]);
+
+  const timeSlotsGrid = useMemo(() => {
+    const rawSlots = generateTimeSlots(activeBusiness.work_start, activeBusiness.work_end, 30);
+    return rawSlots.map((slotStr) => {
+      const evaluation = evaluateSlotAcrossBoxes(
+        selectedDate,
+        slotStr,
+        totalDurationMinutes,
+        selectedBoxPref,
+        bookings,
+        activeBusiness
+      );
+      return {
+        slotStr,
+        ...evaluation
+      };
+    });
+  }, [selectedDate, totalDurationMinutes, selectedBoxPref, bookings, activeBusiness]);
+
+  useEffect(() => {
+    if (selectedTimeSlot) {
+      const currentEval = timeSlotsGrid.find((t) => t.slotStr === selectedTimeSlot);
+      if (!currentEval || !currentEval.available) {
+        setSelectedTimeSlot(null);
+      }
+    }
+  }, [timeSlotsGrid, selectedTimeSlot]);
+
+  const liveFreeBoxesInfo = useMemo(() => {
+    const nowHourMin = 14 * 60;
+    let freeCount = 0;
+    const freeNums = [];
+    for (let b = 1; b <= activeBusiness.boxes_count; b++) {
+      const check = checkBoxAvailability(b, getTodayStr(0), nowHourMin, 60, bookings, activeBusiness);
+      if (check.available) {
+        freeCount++;
+        freeNums.push(b);
+      }
+    }
+    return { freeCount, freeNums };
+  }, [activeBusiness, bookings]);
+
+  const bookingSectionRef = useRef(null);
+  const portfolioSectionRef = useRef(null);
+
+  const scrollToBooking = () => {
+    if (viewMode !== 'client') setViewMode('client');
+    setTimeout(() => {
+      bookingSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  };
+
+  const scrollToPortfolio = () => {
+    if (viewMode !== 'client') setViewMode('client');
+    setTimeout(() => {
+      portfolioSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  };
+
+  const toggleServiceSelection = (srvId) => {
+    setConfirmedTicket(null);
+    setSelectedServiceIds((prev) =>
+      prev.includes(srvId) ? prev.filter((id) => id !== srvId) : [...prev, srvId]
+    );
+  };
+
+  const handleCompleteBooking = (e) => {
+    e.preventDefault();
+    setFormError('');
+
+    if (selectedServicesList.length === 0) {
+      setFormError('Выберите хотя бы одну услугу из списка.');
+      return;
+    }
+    if (!selectedTimeSlot) {
+      setFormError('Выберите удобное время визита.');
+      return;
+    }
+    if (!clientName.trim() || clientPhone.replace(/\D/g, '').length < 11) {
+      setFormError('Укажите ваше имя и номер телефона (+7 7XX XXX-XX-XX).');
+      return;
+    }
+
+    const slotEval = timeSlotsGrid.find((t) => t.slotStr === selectedTimeSlot);
+    if (!slotEval || !slotEval.available) {
+      setFormError('Это время только что было занято. Пожалуйста, выберите соседний слот.');
+      return;
+    }
+
+    const newBooking = {
+      id: `VIP-${Math.floor(1000 + Math.random() * 9000)}`,
+      business_id: activeBusiness.id,
+      service_ids: selectedServicesList.map((s) => s.id),
+      service_titles: selectedServicesList.map((s) => s.title),
+      client_name: clientName.trim(),
+      client_phone: clientPhone.trim(),
+      car_model: carModel.trim() || 'Автомобиль гостя',
+      car_plate: carPlate.trim().toUpperCase() || '—',
+      date: selectedDate,
+      start_time: selectedTimeSlot,
+      end_time: slotEval.endTimeStr,
+      duration_minutes: totalDurationMinutes,
+      box_number: slotEval.assignedBox,
+      total_price: totalPrice,
+      source: 'web',
+      status: 'Новая'
+    };
+
+    setBookings((prev) => [newBooking, ...prev]);
+    setConfirmedTicket(newBooking);
+    showToast(`Запись подтверждена! Бокс №${newBooking.box_number} забронирован на ${newBooking.start_time}.`);
+  };
+
+  // --- AI Concierge State ---
+  const [isAiChatOpen, setIsAiChatOpen] = useState(false);
+  const [aiMessages, setAiMessages] = useState([]);
+  const [aiInput, setAiInput] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiQuickClientName, setAiQuickClientName] = useState('Аскар');
+  const [aiQuickClientPhone, setAiQuickClientPhone] = useState('+7 (707) 555-88-99');
+  const [aiQuickCarModel, setAiQuickCarModel] = useState('Porsche 911 / Zeekr 001');
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    setAiMessages([
+      {
+        id: 'welcome-msg',
+        role: 'assistant',
+        text: `Добро пожаловать в ${activeBusiness.name}.\n\nЯ ваш персональный ИИ-консьерж. Напишите, какую услугу и в какое время вы предпочитаете — я проверю загрузку всех ${activeBusiness.boxes_count} боксов и подготовлю талон записи в одно касание.`,
+        proposal: null,
+        timestamp: 'Сейчас'
+      }
+    ]);
+  }, [activeBusiness.id]);
+
+  useEffect(() => {
+    if (isAiChatOpen) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [aiMessages, isAiChatOpen]);
+
+  const handleSendAiMessage = async (customPrompt) => {
+    const textToSend = (customPrompt ?? aiInput).trim();
+    if (!textToSend || aiLoading) return;
+
+    const userMsg = {
+      id: 'usr-' + Date.now(),
+      role: 'user',
+      text: textToSend,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setAiMessages((prev) => [...prev, userMsg]);
+    if (!customPrompt) setAiInput('');
+    setAiLoading(true);
+
+    const response = await callGeminiBookingAssistant({
+      userMessage: textToSend,
+      business: activeBusiness,
+      services: activeServices,
+      bookings,
+      daysList
+    });
+
+    const botMsg = {
+      id: 'bot-' + Date.now(),
+      role: 'assistant',
+      text: response.text,
+      proposal: response.proposal,
+      booked: false,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setAiMessages((prev) => [...prev, botMsg]);
+    setAiLoading(false);
+  };
+
+  const handleOneClickAiBooking = (msgId, proposal) => {
+    if (!proposal) return;
+
+    const check = checkBoxAvailability(
+      proposal.boxNumber,
+      proposal.dateStr,
+      timeToMinutes(proposal.startTime),
+      proposal.durationMinutes,
+      bookings,
+      activeBusiness
+    );
+
+    if (!check.available) {
+      showToast('Этот слот уже занят, выберите другое время.', 'error');
+      return;
+    }
+
+    const newBooking = {
+      id: `AI-${Math.floor(1000 + Math.random() * 9000)}`,
+      business_id: activeBusiness.id,
+      service_ids: [proposal.service.id],
+      service_titles: [proposal.service.title],
+      client_name: aiQuickClientName.trim() || 'Гость (ИИ-Консьерж)',
+      client_phone: aiQuickClientPhone.trim() || '+7 (707) 000-00-00',
+      car_model: aiQuickCarModel.trim() || 'Автомобиль гостя',
+      car_plate: 'VIP 02',
+      date: proposal.dateStr,
+      start_time: proposal.startTime,
+      end_time: proposal.endTime,
+      duration_minutes: proposal.durationMinutes,
+      box_number: proposal.boxNumber,
+      total_price: proposal.price,
+      source: 'ai_chat',
+      status: 'Новая'
+    };
+
+    setBookings((prev) => [newBooking, ...prev]);
+    setConfirmedTicket(newBooking);
+
+    setAiMessages((prev) =>
+      prev.map((m) => (m.id === msgId ? { ...m, booked: true, bookedTicket: newBooking } : m))
+    );
+
+    showToast(`Визит оформлен! Бокс №${newBooking.box_number} забронирован.`);
+  };
+
+  // --- Portfolio Add-by-URL State ---
+  const [workPhotoUrlInput, setWorkPhotoUrlInput] = useState('');
+  const [workPhotoTitleInput, setWorkPhotoTitleInput] = useState('');
+  const [workPhotoCarInput, setWorkPhotoCarInput] = useState('');
+  const [workPhotoTagInput, setWorkPhotoTagInput] = useState('Детейлинг');
+
+  const handleAddPortfolioPhotoByUrl = (e) => {
+    e.preventDefault();
+    if (!workPhotoUrlInput.trim()) return;
+
+    const newPhotoItem = {
+      url: workPhotoUrlInput.trim(),
+      title: workPhotoTitleInput.trim() || 'Выполненная работа детейлинг-студии',
+      car: workPhotoCarInput.trim() || 'Премиум авто',
+      tag: workPhotoTagInput || 'Детейлинг'
+    };
+
+    setBusinesses((prev) =>
+      prev.map((b) =>
+        b.id === activeBusiness.id
+          ? {
+              ...b,
+              portfolio_images: [newPhotoItem, ...(b.portfolio_images || [])]
+            }
+          : b
+      )
+    );
+
+    setWorkPhotoUrlInput('');
+    setWorkPhotoTitleInput('');
+    setWorkPhotoCarInput('');
+    setShowAddWorkPhotoModal(false);
+    showToast('Фотография реальной работы добавлена в галерею!');
+  };
+
+  // --- New Studio Registration in ?v= Registry ---
+  const [newStudioForm, setNewStudioForm] = useState({
+    slug: '',
+    name: '',
+    category: 'Детейлинг-студия • Керамика • PPF',
+    address: 'г. Алматы, ',
+    phone: '+7 (707) ',
+    logoUrl: '',
+    hero_image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=1800&q=85',
+    accent_color: '#D4AF37',
+    boxes_count: 3
+  });
+
+  const handleCreateStudioInRegistry = (e) => {
+    e.preventDefault();
+    if (!newStudioForm.name.trim()) return;
+
+    const cleanSlug =
+      (newStudioForm.slug || newStudioForm.name)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || `studio-${Date.now().toString().slice(-3)}`;
+
+    const bizId = `biz-${Date.now()}`;
+    const createdStudio = {
+      id: bizId,
+      slug: cleanSlug,
+      aliases: [cleanSlug],
+      name: newStudioForm.name.trim(),
+      shortName: newStudioForm.name.trim().split(' ')[0].toUpperCase(),
+      monogram: newStudioForm.name.trim().slice(0, 2).toUpperCase(),
+      logoUrl: newStudioForm.logoUrl.trim(),
+      category: newStudioForm.category,
+      address: newStudioForm.address,
+      phone: newStudioForm.phone,
+      rating: 5.0,
+      reviews_count: 45,
+      boxes_count: Number(newStudioForm.boxes_count) || 2,
+      accent_color: newStudioForm.accent_color || '#D4AF37',
+      work_start: '09:00',
+      work_end: '21:00',
+      admin_pin: '0000',
+      hero_image:
+        newStudioForm.hero_image.trim() ||
+        'https://images.unsplash.com/photo-1618843479319-561729166651?auto=format&fit=crop&w=1800&q=85',
+      hero_caption: 'Индивидуальный детейлинг и бережный уход за вашим автомобилем',
+      portfolio_images: STUDIO_REGISTRY[0].portfolio_images.slice(0, 4)
+    };
+
+    const defaultServices = [
+      {
+        id: `srv-${bizId}-1`,
+        business_id: bizId,
+        title: 'Трёхфазная Детейлинг-Мойка Люкс',
+        description: 'Безопасная мойка кузова и дисков немецкой химией KochChemie, продувка и уборка салона.',
+        price: 12000,
+        duration_minutes: 60,
+        category: 'Мойка',
+        popular: true
+      },
+      {
+        id: `srv-${bizId}-2`,
+        business_id: bizId,
+        title: 'Восстановительная полировка + Керамика 9H',
+        description: 'Глубокая полировка ЛКП и защита керамическим составом на 12 месяцев.',
+        price: 135000,
+        duration_minutes: 180,
+        category: 'Полировка и Керамика',
+        popular: true
+      },
+      {
+        id: `srv-${bizId}-3`,
+        business_id: bizId,
+        title: 'Детейлинг-химчистка салона с кондиционером кожи',
+        description: 'Чистка кожи, алькантары, потолка и ковролина с озонацией.',
+        price: 60000,
+        duration_minutes: 180,
+        category: 'Химчистка',
+        popular: false
+      }
+    ];
+
+    setBusinesses((prev) => [...prev, createdStudio]);
+    setServices((prev) => [...prev, ...defaultServices]);
+    handleSwitchTenant(cleanSlug);
+    setNewStudioForm({
+      slug: '',
+      name: '',
+      category: 'Детейлинг-студия • Керамика • PPF',
+      address: 'г. Алматы, ',
+      phone: '+7 (707) ',
+      logoUrl: '',
+      hero_image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=1800&q=85',
+      accent_color: '#D4AF37',
+      boxes_count: 3
+    });
+    setShowRegistryModal(false);
+    showToast(`Салон «${createdStudio.name}» подключен по ссылке ?v=${cleanSlug}`);
+  };
+
+  // --- Admin Manual Booking & Service Forms ---
+  const [showManualBookingModal, setShowManualBookingModal] = useState(false);
+  const [manualForm, setManualForm] = useState({
+    serviceId: '',
+    date: getTodayStr(0),
+    startTime: '10:00',
+    boxNumber: 1,
+    clientName: '',
+    clientPhone: '+7 (701) ',
+    carModel: '',
+    carPlate: ''
+  });
+
+  const [newServiceForm, setNewServiceForm] = useState({
+    title: '',
+    category: 'Детейлинг',
+    price: 25000,
+    duration_minutes: 90,
+    description: ''
+  });
+
+  // Switch active studio via ?v=slug
+  const handleSwitchTenant = (slug) => {
+    setActiveSlug(slug);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('v', slug);
+      url.searchParams.delete('b');
+      window.history.pushState({}, '', url.toString());
+    } catch {}
+    showToast(`Активен салон: ?v=${slug}`);
+  };
+
+  const copyDirectStudioUrl = (slug) => {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('v', slug);
+      url.searchParams.delete('b');
+      navigator.clipboard?.writeText(url.toString());
+      showToast(`Ссылка скопирована: ?v=${slug}`);
+    } catch {
+      showToast(`Используйте параметр ?v=${slug}`);
+    }
+  };
+
+  const handleDownloadIcs = (ticket) => {
+    const dateClean = ticket.date.replace(/-/g, '');
+    const startClean = ticket.start_time.replace(':', '') + '00';
+    const endClean = ticket.end_time.replace(':', '') + '00';
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'BEGIN:VEVENT',
+      `SUMMARY:Визит в ${activeBusiness.name} (${ticket.service_titles.join(', ')})`,
+      `DTSTART:${dateClean}T${startClean}`,
+      `DTEND:${dateClean}T${endClean}`,
+      `LOCATION:${activeBusiness.address}`,
+      `DESCRIPTION:Талон ${ticket.id}. Бокс №${ticket.box_number}. Сумма: ${formatPrice(ticket.total_price)}`,
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `booking-${ticket.id}.ics`;
+    link.click();
+    showToast('Напоминание для календаря (.ics) сохранено');
+  };
+
+  const serviceCategories = useMemo(() => {
+    const cats = new Set(['Все']);
+    activeServices.forEach((s) => cats.add(s.category));
+    return Array.from(cats);
+  }, [activeServices]);
+
+  const filteredServices = useMemo(() => {
+    if (selectedCategory === 'Все') return activeServices;
+    return activeServices.filter((s) => s.category === selectedCategory);
+  }, [activeServices, selectedCategory]);
+
+  const accentColor = activeBusiness.accent_color || '#D4AF37';
+
+  return (
+    <div
+      className="min-h-screen bg-[#09090B] text-[#FAFAFA] font-sans antialiased selection:bg-white/15 relative overflow-x-hidden pb-32"
+      style={{ '--brand-accent': accentColor }}
+    >
+      {/* =====================================================================
+          SOFT LUXURY AMBIENT RADIAL GLOW (QUIET AUTOMOTIVE ATMOSPHERE)
+      ===================================================================== */}
+      <div
+        className="pointer-events-none fixed -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[480px] rounded-full blur-[160px] opacity-[0.13] transition-all duration-1000 z-0"
+        style={{
+          background: `radial-gradient(circle, ${accentColor} 0%, rgba(9,9,11,0) 75%)`
+        }}
+      />
+
+      {/* Soft Luxury Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] w-[92%] max-w-md bg-zinc-900/95 backdrop-blur-2xl border border-white/[0.12] rounded-2xl px-4 py-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex items-center gap-3 transition-all">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+            style={{
+              backgroundColor: toastMessage.type === 'error' ? 'rgba(239,68,68,0.15)' : `${accentColor}20`,
+              color: toastMessage.type === 'error' ? '#F87171' : accentColor
+            }}
+          >
+            {toastMessage.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+          </div>
+          <p className="text-xs sm:text-sm font-medium text-zinc-100">{toastMessage.msg}</p>
+        </div>
+      )}
+
+      {/* =====================================================================
+          REFINED TOP HEADER: STUDIO REGISTRY (?v=) & BRAND NAVIGATION
+      ===================================================================== */}
+      <header className="sticky top-0 z-40 bg-[#09090B]/80 backdrop-blur-2xl border-b border-white/[0.06]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="h-16 flex items-center justify-between gap-3">
+            {/* Left: Studio Logo + Name + Live ?v= badge */}
+            <div className="flex items-center gap-3 min-w-0">
+              <StudioLogo
+                business={activeBusiness}
+                size="md"
+                onClick={() => setShowLogoQuickModal(true)}
+              />
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm sm:text-base font-semibold tracking-tight text-white truncate">
+                    {activeBusiness.name}
+                  </span>
+                  <button
+                    onClick={() => copyDirectStudioUrl(activeBusiness.slug)}
+                    className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-[10px] font-mono text-zinc-400 hover:text-zinc-200 transition"
+                    title="Скопировать прямую ссылку на этот салон"
+                  >
+                    <span>?v={activeBusiness.slug}</span>
+                    <Copy className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-zinc-400">
+                  <span className="inline-flex items-center gap-1 text-emerald-400/90">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Открыто
+                  </span>
+                  <span>•</span>
+                  <span className="truncate">Боксов свободно: {liveFreeBoxesInfo.freeCount} из {activeBusiness.boxes_count}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Studio Switcher (?v=), Logo Button, and Owner Cabinet */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => setShowRegistryModal(true)}
+                className="px-3 py-2 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-zinc-200 flex items-center gap-1.5 transition"
+                title="Реестр салонов и подключение по ?v="
+              >
+                <Building2 className="w-3.5 h-3.5" style={{ color: accentColor }} />
+                <span className="hidden sm:inline">Реестр салонов</span>
+                <span className="sm:hidden font-mono text-[11px]">?v=</span>
+                <ChevronDown className="w-3 h-3 text-zinc-400" />
+              </button>
+
+              <button
+                onClick={() => setShowLogoQuickModal(true)}
+                className="p-2 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-zinc-300 hover:text-white transition"
+                title="Быстро поменять логотип или главное фото по ссылке"
+              >
+                <ImageIcon className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={() => setViewMode(viewMode === 'client' ? 'admin' : 'client')}
+                className="px-3.5 py-2 rounded-full text-xs font-medium flex items-center gap-1.5 transition border"
+                style={
+                  viewMode === 'admin'
+                    ? { backgroundColor: accentColor, color: '#09090B', borderColor: accentColor, fontWeight: 600 }
+                    : { backgroundColor: 'rgba(255,255,255,0.04)', color: '#FAFAFA', borderColor: 'rgba(255,255,255,0.08)' }
+                }
+              >
+                {viewMode === 'admin' ? (
+                  <>
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Витрина</span>
+                  </>
+                ) : (
+                  <>
+                    <Sliders className="w-3.5 h-3.5" style={{ color: accentColor }} />
+                    <span className="hidden md:inline">Кабинет</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Subtle Horizontal Pill Switcher for ?v= Studios */}
+          <div className="py-2 border-t border-white/[0.04] flex items-center gap-2 overflow-x-auto no-scrollbar">
+            <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-medium shrink-0">
+              Салоны (?v=):
+            </span>
+            {businesses.map((biz) => {
+              const isActive = biz.id === activeBusiness.id;
+              return (
+                <button
+                  key={biz.id}
+                  onClick={() => handleSwitchTenant(biz.slug)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 transition shrink-0 border ${
+                    isActive
+                      ? 'bg-white/[0.1] text-white border-white/20 shadow-sm'
+                      : 'bg-transparent text-zinc-400 border-transparent hover:text-zinc-200 hover:bg-white/[0.03]'
+                  }`}
+                >
+                  <span
+                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{ backgroundColor: biz.accent_color }}
+                  />
+                  <span>{biz.name}</span>
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setShowRegistryModal(true)}
+              className="px-2.5 py-1 rounded-full text-[11px] text-zinc-400 hover:text-white bg-white/[0.03] border border-white/[0.06] shrink-0 flex items-center gap-1"
+            >
+              <Plus className="w-3 h-3" />
+              <span>Подключить салон</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* =====================================================================
+          VIEW 1: SOFT LUXURY CLIENT STOREFRONT (MOBILE-FIRST + DESKTOP SPLIT)
+      ===================================================================== */}
+      {viewMode === 'client' && (
+        <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-5 sm:pt-8 space-y-10 sm:space-y-14">
+          {/* -----------------------------------------------------------------
+              1. ONE STUNNING LUXURY HERO PHOTOGRAPH + STUDIO IDENTITY CARD
+          ----------------------------------------------------------------- */}
+          <section className="relative rounded-[28px] sm:rounded-[34px] overflow-hidden border border-white/[0.08] bg-[#111114] shadow-[0_25px_70px_rgba(0,0,0,0.75)]">
+            {/* Single Iconic Luxury Automotive Photograph */}
+            <div className="relative h-[360px] sm:h-[440px] w-full overflow-hidden">
+              <img
+                src={activeBusiness.hero_image}
+                alt={activeBusiness.name}
+                className="w-full h-full object-cover object-center scale-[1.01] transition-transform duration-1000"
+              />
+              {/* Soft Luxury Vignette Overlays */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-[#09090B]/55 to-black/20" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#09090B]/90 via-[#09090B]/30 to-transparent" />
+
+              {/* Top Floating Pills inside Hero */}
+              <div className="absolute top-4 sm:top-6 left-4 sm:left-6 right-4 sm:right-6 flex items-center justify-between gap-2">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/55 backdrop-blur-xl border border-white/[0.12] text-xs font-medium text-zinc-100">
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                  <span className="font-semibold">{activeBusiness.rating}</span>
+                  <span className="text-zinc-400">• 2ГИС ({activeBusiness.reviews_count})</span>
+                </div>
+
+                <button
+                  onClick={scrollToPortfolio}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/55 hover:bg-black/75 backdrop-blur-xl border border-white/[0.12] text-xs font-medium text-zinc-200 transition"
+                >
+                  <ImageIcon className="w-3.5 h-3.5" style={{ color: accentColor }} />
+                  <span>Фото работ ({activeBusiness.portfolio_images?.length || 0})</span>
+                </button>
+              </div>
+
+              {/* Bottom Hero Content */}
+              <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-9 lg:p-10 flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+                <div className="space-y-3 max-w-2xl">
+                  <div className="flex items-center gap-3">
+                    <StudioLogo
+                      business={activeBusiness}
+                      size="lg"
+                      onClick={() => setShowLogoQuickModal(true)}
+                    />
+                    <div>
+                      <span
+                        className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.18em] block"
+                        style={{ color: accentColor }}
+                      >
+                        {activeBusiness.category}
+                      </span>
+                      <h1 className="text-2xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-white leading-tight mt-0.5">
+                        {activeBusiness.name}
+                      </h1>
+                    </div>
+                  </div>
+
+                  <p className="text-xs sm:text-sm text-zinc-300/90 max-w-xl leading-relaxed">
+                    {activeBusiness.hero_caption ||
+                      'Премиальный детейлинг, бережная трехфазная мойка и защита кузова с онлайн-бронированием бокса без ожидания.'}
+                  </p>
+
+                  {/* Address & Phone Pills */}
+                  <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                    <a
+                      href={`https://2gis.kz/almaty/search/${encodeURIComponent(activeBusiness.address)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] backdrop-blur-xl border border-white/[0.09] text-xs text-zinc-200 transition"
+                    >
+                      <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} />
+                      <span className="truncate max-w-[240px] sm:max-w-none">{activeBusiness.address}</span>
+                      <ExternalLink className="w-3 h-3 text-zinc-400 shrink-0" />
+                    </a>
+
+                    <a
+                      href={`tel:${activeBusiness.phone}`}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] backdrop-blur-xl border border-white/[0.09] text-xs font-mono text-zinc-200 transition"
+                    >
+                      <Phone className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} />
+                      <span>{activeBusiness.phone}</span>
+                    </a>
+                  </div>
+                </div>
+
+                {/* Soft Luxury Hero CTAs */}
+                <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 w-full lg:w-64 shrink-0">
+                  <button
+                    onClick={scrollToBooking}
+                    className="w-full py-3.5 px-6 rounded-2xl font-semibold text-sm text-[#09090B] shadow-xl flex items-center justify-center gap-2 transition transform active:scale-[0.98] hover:brightness-105"
+                    style={{
+                      backgroundColor: accentColor,
+                      boxShadow: `0 12px 35px -10px ${accentColor}70`
+                    }}
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span>Записаться онлайн</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsAiChatOpen(true)}
+                    className="w-full py-3.5 px-5 rounded-2xl font-medium text-xs sm:text-sm text-zinc-100 bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.1] backdrop-blur-xl flex items-center justify-center gap-2 transition"
+                  >
+                    <Sparkles className="w-4 h-4" style={{ color: accentColor }} />
+                    <span>ИИ-консьерж записи</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* -----------------------------------------------------------------
+              2. ADAPTIVE DESKTOP 2-COLUMN SPLIT / MOBILE-FIRST FLOW:
+                 LEFT: SERVICE CATALOG
+                 RIGHT: STICKY INTERACTIVE BOOKING CONCIERGE
+          ----------------------------------------------------------------- */}
+          <section ref={bookingSectionRef} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* LEFT COLUMN (7 Cols on Desktop): Soft Luxury Services Catalog */}
+            <div className="lg:col-span-7 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div>
+                  <span
+                    className="text-[11px] font-semibold uppercase tracking-[0.18em] block"
+                    style={{ color: accentColor }}
+                  >
+                    Меню ухода за автомобилем
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white mt-1">
+                    Выберите услуги
+                  </h2>
+                </div>
+
+                {/* Smooth Category Filter Pills */}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                  {serviceCategories.map((cat) => {
+                    const active = selectedCategory === cat;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setSelectedCategory(cat)}
+                        className={`px-3.5 py-2 rounded-full text-xs font-medium transition shrink-0 border ${
+                          active
+                            ? 'text-[#09090B] font-semibold shadow-sm'
+                            : 'bg-zinc-900/60 text-zinc-400 border-white/[0.07] hover:text-zinc-200 hover:border-white/15'
+                        }`}
+                        style={
+                          active
+                            ? { backgroundColor: accentColor, borderColor: accentColor }
+                            : {}
+                        }
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Soft Velvet Glass Service Cards */}
+              <div className="space-y-3.5">
+                {filteredServices.map((srv) => {
+                  const isSelected = selectedServiceIds.includes(srv.id);
+                  return (
+                    <div
+                      key={srv.id}
+                      onClick={() => toggleServiceSelection(srv.id)}
+                      className={`group relative rounded-3xl p-5 sm:p-6 transition-all duration-300 cursor-pointer backdrop-blur-2xl border ${
+                        isSelected
+                          ? 'bg-zinc-900/90 shadow-[0_15px_40px_rgba(0,0,0,0.6)]'
+                          : 'bg-zinc-900/45 border-white/[0.07] hover:border-white/[0.15] hover:bg-zinc-900/65'
+                      }`}
+                      style={
+                        isSelected
+                          ? {
+                              borderColor: `${accentColor}90`,
+                              boxShadow: `0 12px 35px -12px ${accentColor}30`
+                            }
+                          : {}
+                      }
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="px-2.5 py-0.5 rounded-full bg-white/[0.05] border border-white/[0.07] text-[11px] text-zinc-300">
+                              {srv.category}
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-[11px] font-mono text-zinc-300">
+                              <Clock className="w-3 h-3" style={{ color: accentColor }} />
+                              <span>{formatDuration(srv.duration_minutes)}</span>
+                            </span>
+                          </div>
+
+                          <h3 className="text-base sm:text-lg font-semibold text-white leading-snug">
+                            {srv.title}
+                          </h3>
+
+                          <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                            {srv.description}
+                          </p>
+                        </div>
+
+                        {/* Price & Soft Check Circle */}
+                        <div className="flex flex-col items-end justify-between shrink-0 gap-4">
+                          <div
+                            className={`w-7 h-7 rounded-full flex items-center justify-center border transition-all ${
+                              isSelected
+                                ? 'text-[#09090B] border-transparent scale-105'
+                                : 'border-white/20 bg-white/[0.03] group-hover:border-white/40'
+                            }`}
+                            style={isSelected ? { backgroundColor: accentColor } : {}}
+                          >
+                            {isSelected ? (
+                              <Check className="w-4 h-4 stroke-[2.5]" />
+                            ) : (
+                              <Plus className="w-3.5 h-3.5 text-zinc-400" />
+                            )}
+                          </div>
+
+                          <div className="text-right">
+                            <span className="text-[10px] uppercase tracking-wider text-zinc-500 block">
+                              Стоимость
+                            </span>
+                            <span className="text-base sm:text-lg font-semibold font-mono text-white tabular-nums">
+                              {formatPrice(srv.price)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN (5 Cols on Desktop): Sticky Interactive Booking Concierge */}
+            <div className="lg:col-span-5 lg:sticky lg:top-28">
+              <div className="rounded-[30px] bg-zinc-900/70 backdrop-blur-2xl border border-white/[0.09] p-5 sm:p-7 shadow-[0_25px_60px_rgba(0,0,0,0.75)] space-y-6">
+                {/* Concierge Top Summary Header */}
+                <div className="flex items-center justify-between pb-4 border-b border-white/[0.07]">
+                  <div>
+                    <span
+                      className="text-[10px] font-semibold uppercase tracking-[0.18em] block"
+                      style={{ color: accentColor }}
+                    >
+                      Бронирование бокса
+                    </span>
+                    <h3 className="text-lg sm:text-xl font-semibold text-white mt-0.5">
+                      Дата и время визита
+                    </h3>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-lg sm:text-xl font-bold font-mono text-white tabular-nums block">
+                      {formatPrice(totalPrice)}
+                    </span>
+                    <span className="text-[11px] font-mono text-zinc-400">
+                      ⏱ {formatDuration(totalDurationMinutes)} • {selectedServicesList.length} усл.
+                    </span>
+                  </div>
+                </div>
+
+                {/* Apple-Wallet Style Digital Pass when Confirmed */}
+                {confirmedTicket ? (
+                  <div className="rounded-3xl bg-[#09090B] border border-white/[0.14] p-5 sm:p-6 space-y-5 relative overflow-hidden">
+                    <div
+                      className="h-1.5 w-full absolute top-0 left-0"
+                      style={{ backgroundColor: accentColor }}
+                    />
+
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-10 h-10 rounded-2xl flex items-center justify-center text-[#09090B]"
+                          style={{ backgroundColor: accentColor }}
+                        >
+                          <Check className="w-5 h-5 stroke-[2.5]" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] uppercase tracking-widest text-emerald-400 font-semibold block">
+                            Бокс забронирован
+                          </span>
+                          <h4 className="text-lg font-bold text-white">
+                            Талон #{confirmedTicket.id}
+                          </h4>
+                        </div>
+                      </div>
+
+                      <span className="px-3 py-1 rounded-full bg-white/[0.06] border border-white/[0.1] text-xs font-mono font-semibold text-white">
+                        Бокс №{confirmedTicket.box_number}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-zinc-900/70 border border-white/[0.06] text-xs">
+                      <div>
+                        <span className="text-zinc-500 block">Дата и время</span>
+                        <span className="font-mono font-semibold text-white mt-0.5 block">
+                          {confirmedTicket.date}
+                        </span>
+                        <span className="font-mono text-zinc-300">
+                          {confirmedTicket.start_time} – {confirmedTicket.end_time}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-zinc-500 block">Автомобиль</span>
+                        <span className="font-semibold text-white mt-0.5 block truncate">
+                          {confirmedTicket.car_model}
+                        </span>
+                        <span className="font-mono text-zinc-400">
+                          {confirmedTicket.car_plate}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 text-xs text-zinc-300">
+                      <span className="text-zinc-500 block">Услуги:</span>
+                      {confirmedTicket.service_titles.map((t, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accentColor }} />
+                          <span>{t}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="pt-3 border-t border-dashed border-white/15 flex flex-col gap-2.5">
+                      <a
+                        href={`https://wa.me/${activeBusiness.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
+                          `Здравствуйте! Подтверждаю запись в ${activeBusiness.name}. Талон #${confirmedTicket.id}, дата: ${confirmedTicket.date} в ${confirmedTicket.start_time} (Бокс №${confirmedTicket.box_number}). Авто: ${confirmedTicket.car_model}.`
+                        )}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-[#09090B] font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        <span>Отправить талон в WhatsApp</span>
+                      </a>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleDownloadIcs(confirmedTicket)}
+                          className="flex-1 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-xs text-zinc-200 flex items-center justify-center gap-1.5 transition"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>В календарь</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setConfirmedTicket(null);
+                            setSelectedTimeSlot(null);
+                          }}
+                          className="px-3.5 py-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] text-xs text-zinc-400 hover:text-white transition"
+                        >
+                          Новая запись
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleCompleteBooking} className="space-y-5">
+                    {/* 7-Day Horizontal Date Selector */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs text-zinc-400">
+                        <span>1. День визита</span>
+                        <span className="font-mono text-zinc-300">{selectedDate}</span>
+                      </div>
+
+                      <div className="grid grid-cols-7 gap-1.5">
+                        {daysList.map((d) => {
+                          const isSelected = d.dateStr === selectedDate;
+                          return (
+                            <button
+                              key={d.dateStr}
+                              type="button"
+                              onClick={() => {
+                                setSelectedDate(d.dateStr);
+                                setSelectedTimeSlot(null);
+                              }}
+                              className={`py-2.5 px-1 rounded-2xl border text-center transition flex flex-col items-center justify-center ${
+                                isSelected
+                                  ? 'text-[#09090B] font-semibold shadow-md'
+                                  : 'bg-[#09090B]/60 border-white/[0.06] text-zinc-400 hover:border-white/20 hover:text-zinc-200'
+                              }`}
+                              style={
+                                isSelected
+                                  ? { backgroundColor: accentColor, borderColor: accentColor }
+                                  : {}
+                              }
+                            >
+                              <span className="text-[9px] uppercase opacity-80">{d.dayName}</span>
+                              <span className="text-sm sm:text-base font-bold font-mono mt-0.5">
+                                {d.dayNumber}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Time Slots Grid with Multi-Box Occupancy Protection */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs text-zinc-400">
+                        <span>2. Свободные окна ({formatDuration(totalDurationMinutes)})</span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedBoxPref('auto')}
+                            className={`px-2 py-0.5 rounded-full text-[10px] transition ${
+                              selectedBoxPref === 'auto'
+                                ? 'bg-white/15 text-white'
+                                : 'text-zinc-500 hover:text-zinc-300'
+                            }`}
+                          >
+                            Любой бокс
+                          </button>
+                          {Array.from({ length: activeBusiness.boxes_count }, (_, i) => i + 1).map(
+                            (bNum) => (
+                              <button
+                                key={bNum}
+                                type="button"
+                                onClick={() => setSelectedBoxPref(bNum)}
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-mono transition ${
+                                  Number(selectedBoxPref) === bNum
+                                    ? 'bg-white/15 text-white'
+                                    : 'text-zinc-500 hover:text-zinc-300'
+                                }`}
+                              >
+                                №{bNum}
+                              </button>
+                            )
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-4 sm:grid-cols-4 gap-2 max-h-52 overflow-y-auto pr-1">
+                        {timeSlotsGrid.map((slot) => {
+                          const isPicked = selectedTimeSlot === slot.slotStr;
+                          return (
+                            <button
+                              key={slot.slotStr}
+                              type="button"
+                              disabled={!slot.available}
+                              onClick={() => setSelectedTimeSlot(slot.slotStr)}
+                              title={slot.reason}
+                              className={`py-2 px-1.5 rounded-2xl border text-center transition flex flex-col items-center justify-center ${
+                                !slot.available
+                                  ? 'bg-zinc-950/40 border-white/[0.03] text-zinc-600 cursor-not-allowed opacity-45'
+                                  : isPicked
+                                  ? 'text-[#09090B] font-semibold shadow-md'
+                                  : 'bg-[#09090B]/70 border-white/[0.07] text-zinc-200 hover:border-white/25'
+                              }`}
+                              style={
+                                isPicked
+                                  ? { backgroundColor: accentColor, borderColor: accentColor }
+                                  : {}
+                              }
+                            >
+                              <span className="text-xs font-mono font-semibold">{slot.slotStr}</span>
+                              <span
+                                className={`text-[9px] mt-0.5 ${
+                                  !slot.available
+                                    ? 'text-zinc-600'
+                                    : isPicked
+                                    ? 'text-[#09090B]/80'
+                                    : 'text-zinc-400'
+                                }`}
+                              >
+                                {slot.available ? `Бокс №${slot.assignedBox}` : 'Занято'}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Client Inputs */}
+                    <div className="space-y-3 pt-1">
+                      <span className="text-xs text-zinc-400 block">3. Контактные данные</span>
+
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ваше имя *"
+                        value={clientName}
+                        onChange={(e) => setClientName(e.target.value)}
+                        className="w-full px-4 py-3 rounded-2xl bg-[#09090B]/80 border border-white/[0.08] text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-white/25"
+                      />
+
+                      <input
+                        type="tel"
+                        required
+                        placeholder="+7 (707) 000-00-00 *"
+                        value={clientPhone}
+                        onChange={(e) => setClientPhone(formatPhoneMask(e.target.value))}
+                        className="w-full px-4 py-3 rounded-2xl bg-[#09090B]/80 border border-white/[0.08] text-sm font-mono text-white placeholder:text-zinc-500 focus:outline-none focus:border-white/25"
+                      />
+
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <input
+                          type="text"
+                          placeholder="Марка и модель авто"
+                          value={carModel}
+                          onChange={(e) => setCarModel(e.target.value)}
+                          className="w-full px-3.5 py-3 rounded-2xl bg-[#09090B]/80 border border-white/[0.08] text-xs sm:text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-white/25"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Госномер (777 AAA 02)"
+                          maxLength={12}
+                          value={carPlate}
+                          onChange={(e) => setCarPlate(e.target.value.toUpperCase())}
+                          className="w-full px-3.5 py-3 rounded-2xl bg-[#09090B]/80 border border-white/[0.08] text-xs sm:text-sm font-mono uppercase text-white placeholder:text-zinc-500 focus:outline-none focus:border-white/25"
+                        />
+                      </div>
+                    </div>
+
+                    {formError && (
+                      <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                        <span>{formError}</span>
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      className="w-full py-4 px-6 rounded-2xl font-semibold text-sm sm:text-base text-[#09090B] shadow-xl flex items-center justify-center gap-2 transition transform active:scale-[0.98] hover:brightness-105"
+                      style={{
+                        backgroundColor: accentColor,
+                        boxShadow: `0 12px 35px -10px ${accentColor}65`
+                      }}
+                    >
+                      <span>Подтвердить запись • {formatPrice(totalPrice)}</span>
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* -----------------------------------------------------------------
+              3. BOTTOM REAL DETAILING WORKS GALLERY (ADD PHOTOS BY URL)
+          ----------------------------------------------------------------- */}
+          <section
+            ref={portfolioSectionRef}
+            className="pt-6 border-t border-white/[0.06] space-y-6"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div>
+                <span
+                  className="text-[11px] font-semibold uppercase tracking-[0.18em] block"
+                  style={{ color: accentColor }}
+                >
+                  Портфолио ателье
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white mt-1">
+                  Реальные работы студии
+                </h2>
+                <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+                  Автомобили клиентов {activeBusiness.name} после полировки, керамики и оклейки бронепленкой
+                </p>
+              </div>
+
+              {/* Direct Button to Add New Detailing Photo by URL */}
+              <button
+                onClick={() => setShowAddWorkPhotoModal(true)}
+                className="self-start sm:self-auto px-4 py-2.5 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] text-xs font-medium text-zinc-100 flex items-center gap-2 transition"
+              >
+                <Plus className="w-4 h-4" style={{ color: accentColor }} />
+                <span>Добавить фото работы по ссылке</span>
+              </button>
+            </div>
+
+            {/* Soft Luxury Masonry/Grid of Real Detailing Works */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {(activeBusiness.portfolio_images || []).map((item, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => setLightboxImage(item)}
+                  className="group relative h-64 sm:h-72 rounded-[26px] overflow-hidden border border-white/[0.08] bg-[#111114] cursor-pointer shadow-[0_15px_40px_rgba(0,0,0,0.5)]"
+                >
+                  <img
+                    src={item.url}
+                    alt={item.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-[#09090B]/25 to-transparent opacity-90" />
+
+                  {/* Top Badges */}
+                  <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between gap-2">
+                    <span className="px-3 py-1 rounded-full text-[10px] font-medium backdrop-blur-xl bg-black/55 border border-white/[0.12] text-zinc-100">
+                      {item.tag || 'Детейлинг'}
+                    </span>
+                    {item.car && (
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-mono backdrop-blur-xl bg-white/[0.08] border border-white/[0.1] text-zinc-200">
+                        {item.car}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Bottom Caption */}
+                  <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-2">
+                    <p className="text-xs sm:text-sm font-medium text-zinc-100 line-clamp-2 leading-snug">
+                      {item.title}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </main>
+      )}
+
+      {/* =====================================================================
+          VIEW 2: OWNER CABINET (PIN 0000, LOGO/PHOTO URL MANAGER & SCHEDULE)
+      ===================================================================== */}
+      {viewMode === 'admin' && (
+        <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-8 space-y-8">
+          {!adminUnlocked ? (
+            <div className="max-w-md mx-auto my-12 p-8 rounded-[30px] bg-zinc-900/75 border border-white/[0.1] backdrop-blur-2xl text-center space-y-6 shadow-2xl">
+              <div
+                className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center border border-white/10"
+                style={{ backgroundColor: `${accentColor}15`, color: accentColor }}
+              >
+                <Lock className="w-6 h-6" />
+              </div>
+
+              <div className="space-y-1">
+                <h2 className="text-xl font-semibold text-white">Кабинет управления</h2>
+                <p className="text-xs text-zinc-400">
+                  Салон: <span className="text-zinc-200">{activeBusiness.name}</span> (?v={activeBusiness.slug})
+                </p>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (pinInput === (activeBusiness.admin_pin || '0000')) {
+                    setAdminUnlocked(true);
+                    setPinError('');
+                  } else {
+                    setPinError('Неверный PIN-код (по умолчанию 0000)');
+                  }
+                }}
+                className="space-y-4"
+              >
+                <input
+                  type="password"
+                  maxLength={6}
+                  placeholder="PIN (0000)"
+                  value={pinInput}
+                  onChange={(e) => setPinInput(e.target.value)}
+                  className="w-full text-center text-xl font-mono tracking-[0.4em] py-3.5 rounded-2xl bg-[#09090B] border border-white/[0.12] text-white focus:outline-none"
+                />
+
+                {pinError && <p className="text-xs text-rose-400">{pinError}</p>}
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPinInput('0000');
+                      setAdminUnlocked(true);
+                    }}
+                    className="w-1/2 py-3 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-medium text-zinc-200 transition"
+                  >
+                    Быстрый вход (0000)
+                  </button>
+                  <button
+                    type="submit"
+                    className="w-1/2 py-3 rounded-2xl text-xs font-semibold text-[#09090B] transition"
+                    style={{ backgroundColor: accentColor }}
+                  >
+                    Открыть
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Top Admin Header */}
+              <div className="p-6 rounded-[28px] bg-zinc-900/70 border border-white/[0.08] backdrop-blur-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <StudioLogo business={activeBusiness} size="lg" />
+                  <div>
+                    <span className="text-[11px] font-mono text-zinc-400">
+                      Ссылка салона: ?v={activeBusiness.slug}
+                    </span>
+                    <h1 className="text-xl sm:text-2xl font-semibold text-white">
+                      {activeBusiness.name}
+                    </h1>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {[
+                    { id: 'schedule', label: `Расписание (${activeBookings.length})`, icon: Calendar },
+                    { id: 'branding', label: 'Логотип, Главное фото и Работы', icon: ImageIcon },
+                    { id: 'services', label: `Прайс-лист (${activeServices.length})`, icon: Sliders }
+                  ].map((t) => {
+                    const Icon = t.icon;
+                    const active = adminTab === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => setAdminTab(t.id)}
+                        className={`px-4 py-2.5 rounded-full text-xs font-medium flex items-center gap-2 transition ${
+                          active
+                            ? 'text-[#09090B] font-semibold'
+                            : 'bg-white/[0.04] text-zinc-300 border border-white/[0.07] hover:text-white'
+                        }`}
+                        style={active ? { backgroundColor: accentColor } : {}}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        <span>{t.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* TAB 1: SCHEDULE */}
+              {adminTab === 'schedule' && (
+                <div className="space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 rounded-3xl bg-zinc-900/50 border border-white/[0.07]">
+                    <div>
+                      <h3 className="text-base font-semibold text-white">
+                        Журнал бронирований боксов
+                      </h3>
+                      <p className="text-xs text-zinc-400">
+                        Все онлайн-заявки и записи через ИИ-консьержа
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setManualForm((prev) => ({
+                          ...prev,
+                          serviceId: activeServices[0]?.id || ''
+                        }));
+                        setShowManualBookingModal(true);
+                      }}
+                      className="px-4 py-2.5 rounded-full text-xs font-semibold text-[#09090B] flex items-center gap-1.5"
+                      style={{ backgroundColor: accentColor }}
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Записать вручную</span>
+                    </button>
+                  </div>
+
+                  <div className="rounded-3xl bg-zinc-900/50 border border-white/[0.07] overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-white/[0.07] text-[11px] uppercase tracking-wider text-zinc-400">
+                            <th className="py-3.5 px-4">Дата и время</th>
+                            <th className="py-3.5 px-4">Бокс</th>
+                            <th className="py-3.5 px-4">Гость и авто</th>
+                            <th className="py-3.5 px-4">Услуга</th>
+                            <th className="py-3.5 px-4">Сумма</th>
+                            <th className="py-3.5 px-4">Статус</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.05] text-xs sm:text-sm">
+                          {activeBookings.map((bk) => (
+                            <tr key={bk.id} className="hover:bg-white/[0.02]">
+                              <td className="py-4 px-4 font-mono">
+                                <span className="font-semibold text-white block">{bk.date}</span>
+                                <span className="text-xs text-zinc-400">
+                                  {bk.start_time} – {bk.end_time}
+                                </span>
+                              </td>
+                              <td className="py-4 px-4 font-mono text-white">
+                                Бокс №{bk.box_number}
+                              </td>
+                              <td className="py-4 px-4">
+                                <div className="font-medium text-white">{bk.client_name}</div>
+                                <div className="text-xs text-zinc-400 font-mono">
+                                  {bk.client_phone} • {bk.car_model}
+                                </div>
+                              </td>
+                              <td className="py-4 px-4 text-xs text-zinc-300 max-w-xs">
+                                {(bk.service_titles || []).join(', ')}
+                              </td>
+                              <td className="py-4 px-4 font-mono font-semibold text-white">
+                                {formatPrice(bk.total_price)}
+                              </td>
+                              <td className="py-4 px-4">
+                                <select
+                                  value={bk.status}
+                                  onChange={(e) => {
+                                    const nextStatus = e.target.value;
+                                    setBookings((prev) =>
+                                      prev.map((item) =>
+                                        item.id === bk.id ? { ...item, status: nextStatus } : item
+                                      )
+                                    );
+                                    showToast(`Статус брони #${bk.id}: ${nextStatus}`);
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-[#09090B] border border-white/10 text-xs text-white"
+                                >
+                                  <option value="Новая">Новая</option>
+                                  <option value="В работе">В работе</option>
+                                  <option value="Завершена">Завершена</option>
+                                  <option value="Отменена">Отменена (освободить слот)</option>
+                                </select>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: BRANDING, LOGO BY URL, HERO PHOTO & REAL WORKS GALLERY */}
+              {adminTab === 'branding' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Left 6 Cols: Logo URL, Hero Image URL & Studio Identity */}
+                  <div className="lg:col-span-6 p-6 rounded-3xl bg-zinc-900/60 border border-white/[0.08] space-y-4">
+                    <h3 className="text-base font-semibold text-white">
+                      Логотип, Главное фото и Бренд (?v={activeBusiness.slug})
+                    </h3>
+
+                    <div>
+                      <label className="text-xs text-zinc-400 block mb-1">
+                        Ссылка на логотип (`logoUrl` — PNG/JPG/SVG)
+                      </label>
+                      <input
+                        type="url"
+                        placeholder="https://... (оставьте пустым для монограммы)"
+                        value={activeBusiness.logoUrl || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setBusinesses((prev) =>
+                            prev.map((b) =>
+                              b.id === activeBusiness.id ? { ...b, logoUrl: val } : b
+                            )
+                          );
+                        }}
+                        className="w-full px-3.5 py-2.5 rounded-2xl bg-[#09090B] border border-white/10 text-xs font-mono text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-zinc-400 block mb-1">
+                        Ссылка на главное фото в шапке (`hero_image`)
+                      </label>
+                      <input
+                        type="url"
+                        placeholder="https://..."
+                        value={activeBusiness.hero_image || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setBusinesses((prev) =>
+                            prev.map((b) =>
+                              b.id === activeBusiness.id ? { ...b, hero_image: val } : b
+                            )
+                          );
+                        }}
+                        className="w-full px-3.5 py-2.5 rounded-2xl bg-[#09090B] border border-white/10 text-xs font-mono text-white"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-zinc-400 block mb-1">Название салона</label>
+                        <input
+                          type="text"
+                          value={activeBusiness.name}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setBusinesses((prev) =>
+                              prev.map((b) =>
+                                b.id === activeBusiness.id ? { ...b, name: val } : b
+                              )
+                            );
+                          }}
+                          className="w-full px-3.5 py-2.5 rounded-2xl bg-[#09090B] border border-white/10 text-xs text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-zinc-400 block mb-1">Кол-во боксов</label>
+                        <select
+                          value={activeBusiness.boxes_count}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setBusinesses((prev) =>
+                              prev.map((b) =>
+                                b.id === activeBusiness.id ? { ...b, boxes_count: val } : b
+                              )
+                            );
+                          }}
+                          className="w-full px-3.5 py-2.5 rounded-2xl bg-[#09090B] border border-white/10 text-xs text-white"
+                        >
+                          {[1, 2, 3, 4, 5, 6].map((n) => (
+                            <option key={n} value={n}>{n} бокса</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-zinc-400 block mb-1">Адрес и телефон</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <input
+                          type="text"
+                          value={activeBusiness.address}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setBusinesses((prev) =>
+                              prev.map((b) =>
+                                b.id === activeBusiness.id ? { ...b, address: val } : b
+                              )
+                            );
+                          }}
+                          className="w-full px-3.5 py-2.5 rounded-2xl bg-[#09090B] border border-white/10 text-xs text-white"
+                        />
+                        <input
+                          type="text"
+                          value={activeBusiness.phone}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setBusinesses((prev) =>
+                              prev.map((b) =>
+                                b.id === activeBusiness.id ? { ...b, phone: val } : b
+                              )
+                            );
+                          }}
+                          className="w-full px-3.5 py-2.5 rounded-2xl bg-[#09090B] border border-white/10 text-xs font-mono text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-zinc-400 block mb-1.5">Оттенок акцента (Quiet Luxury)</label>
+                      <div className="flex items-center gap-2.5">
+                        {[
+                          { name: 'Champagne Gold', hex: '#D4AF37' },
+                          { name: 'Platinum Silver', hex: '#E4E4E7' },
+                          { name: 'Ice Sapphire', hex: '#60A5FA' },
+                          { name: 'Jade Emerald', hex: '#34D399' },
+                          { name: 'Velvet Rose', hex: '#E879F9' }
+                        ].map((c) => (
+                          <button
+                            key={c.hex}
+                            type="button"
+                            onClick={() =>
+                              setBusinesses((prev) =>
+                                prev.map((b) =>
+                                  b.id === activeBusiness.id ? { ...b, accent_color: c.hex } : b
+                                )
+                              )
+                            }
+                            className={`w-8 h-8 rounded-full border-2 transition ${
+                              activeBusiness.accent_color === c.hex
+                                ? 'border-white scale-110'
+                                : 'border-transparent opacity-70 hover:opacity-100'
+                            }`}
+                            style={{ backgroundColor: c.hex }}
+                            title={c.name}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard?.writeText(JSON.stringify(activeBusiness, null, 2));
+                          showToast('Готовый JSON-конфиг салона скопирован в буфер обмена!');
+                        }}
+                        className="w-full py-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] text-xs font-medium text-zinc-200 flex items-center justify-center gap-2 transition"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Скопировать конфиг салона для STUDIO_REGISTRY</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Right 6 Cols: Real Detailing Works Photo URL Manager */}
+                  <div className="lg:col-span-6 p-6 rounded-3xl bg-zinc-900/60 border border-white/[0.08] space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-base font-semibold text-white">
+                        Фото реальных работ внизу сайта ({activeBusiness.portfolio_images?.length || 0})
+                      </h3>
+                      <button
+                        onClick={() => setShowAddWorkPhotoModal(true)}
+                        className="px-3 py-1.5 rounded-full text-xs font-semibold text-[#09090B]"
+                        style={{ backgroundColor: accentColor }}
+                      >
+                        + По ссылке
+                      </button>
+                    </div>
+
+                    <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+                      {(activeBusiness.portfolio_images || []).map((img, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between gap-3 p-2.5 rounded-2xl bg-[#09090B] border border-white/[0.07]"
+                        >
+                          <img
+                            src={img.url}
+                            alt=""
+                            className="w-14 h-14 rounded-xl object-cover shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[10px] font-mono text-zinc-400 block">
+                              {img.tag} • {img.car}
+                            </span>
+                            <p className="text-xs text-zinc-200 line-clamp-1">{img.title}</p>
+                            <p className="text-[10px] font-mono text-zinc-500 truncate">{img.url}</p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setBusinesses((prev) =>
+                                prev.map((b) =>
+                                  b.id === activeBusiness.id
+                                    ? {
+                                        ...b,
+                                        portfolio_images: b.portfolio_images.filter((_, idx) => idx !== i)
+                                      }
+                                    : b
+                                )
+                              );
+                              showToast('Фото удалено из галереи');
+                            }}
+                            className="p-2 text-zinc-500 hover:text-rose-400 transition"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: SERVICES & PRICES */}
+              {adminTab === 'services' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  <div className="lg:col-span-8 space-y-3">
+                    {activeServices.map((srv) => (
+                      <div
+                        key={srv.id}
+                        className="p-5 rounded-3xl bg-zinc-900/60 border border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                      >
+                        <div className="space-y-1 flex-1">
+                          <input
+                            type="text"
+                            value={srv.title}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setServices((prev) =>
+                                prev.map((s) => (s.id === srv.id ? { ...s, title: val } : s))
+                              );
+                            }}
+                            className="w-full bg-transparent text-sm font-semibold text-white border-b border-white/10 pb-1 focus:outline-none"
+                          />
+                          <p className="text-xs text-zinc-400 line-clamp-1">{srv.description}</p>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <input
+                            type="number"
+                            step={500}
+                            value={srv.price}
+                            onChange={(e) => {
+                              const val = Number(e.target.value);
+                              setServices((prev) =>
+                                prev.map((s) => (s.id === srv.id ? { ...s, price: val } : s))
+                              );
+                            }}
+                            className="w-28 px-3 py-2 rounded-xl bg-[#09090B] border border-white/10 text-xs font-mono font-bold text-white"
+                          />
+                          <select
+                            value={srv.duration_minutes}
+                            onChange={(e) => {
+                              const val = Number(e.target.value);
+                              setServices((prev) =>
+                                prev.map((s) =>
+                                  s.id === srv.id ? { ...s, duration_minutes: val } : s
+                                )
+                              );
+                            }}
+                            className="px-2.5 py-2 rounded-xl bg-[#09090B] border border-white/10 text-xs font-mono text-zinc-300"
+                          >
+                            <option value={30}>30 мин</option>
+                            <option value={60}>60 мин</option>
+                            <option value={90}>90 мин</option>
+                            <option value={120}>120 мин</option>
+                            <option value={180}>180 мин</option>
+                            <option value={240}>240 мин</option>
+                          </select>
+                          <button
+                            onClick={() =>
+                              setServices((prev) => prev.filter((s) => s.id !== srv.id))
+                            }
+                            className="p-2 text-zinc-500 hover:text-rose-400"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!newServiceForm.title.trim()) return;
+                      const created = {
+                        id: 'srv-' + Date.now(),
+                        business_id: activeBusiness.id,
+                        title: newServiceForm.title.trim(),
+                        category: newServiceForm.category,
+                        price: Number(newServiceForm.price) || 15000,
+                        duration_minutes: Number(newServiceForm.duration_minutes) || 60,
+                        description:
+                          newServiceForm.description.trim() ||
+                          'Бережное выполнение работ премиальными составами.',
+                        popular: true
+                      };
+                      setServices((prev) => [created, ...prev]);
+                      setNewServiceForm({
+                        title: '',
+                        category: 'Детейлинг',
+                        price: 25000,
+                        duration_minutes: 90,
+                        description: ''
+                      });
+                      showToast('Услуга добавлена');
+                    }}
+                    className="lg:col-span-4 p-6 rounded-3xl bg-zinc-900/60 border border-white/[0.08] space-y-3.5 h-fit"
+                  >
+                    <h4 className="text-sm font-semibold text-white">Добавить услугу</h4>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Название услуги"
+                      value={newServiceForm.title}
+                      onChange={(e) =>
+                        setNewServiceForm({ ...newServiceForm, title: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-2xl bg-[#09090B] border border-white/10 text-xs text-white"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        step={500}
+                        placeholder="Цена (₸)"
+                        value={newServiceForm.price}
+                        onChange={(e) =>
+                          setNewServiceForm({ ...newServiceForm, price: e.target.value })
+                        }
+                        className="w-full px-3.5 py-2.5 rounded-2xl bg-[#09090B] border border-white/10 text-xs font-mono text-white"
+                      />
+                      <select
+                        value={newServiceForm.duration_minutes}
+                        onChange={(e) =>
+                          setNewServiceForm({
+                            ...newServiceForm,
+                            duration_minutes: Number(e.target.value)
+                          })
+                        }
+                        className="w-full px-3 py-2.5 rounded-2xl bg-[#09090B] border border-white/10 text-xs text-white"
+                      >
+                        <option value={60}>1 час</option>
+                        <option value={90}>1.5 часа</option>
+                        <option value={120}>2 часа</option>
+                        <option value={180}>3 часа</option>
+                        <option value={240}>4 часа</option>
+                      </select>
+                    </div>
+                    <textarea
+                      rows={2}
+                      placeholder="Описание услуги"
+                      value={newServiceForm.description}
+                      onChange={(e) =>
+                        setNewServiceForm({ ...newServiceForm, description: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-2xl bg-[#09090B] border border-white/10 text-xs text-white"
+                    />
+                    <button
+                      type="submit"
+                      className="w-full py-3 rounded-2xl text-xs font-semibold text-[#09090B]"
+                      style={{ backgroundColor: accentColor }}
+                    >
+                      Сохранить услугу
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+          )}
+        </main>
+      )}
+
+      {/* =====================================================================
+          MOBILE-FIRST FLOATING GLASS DOCK (BOTTOM SUMMARY & AI LAUNCHER)
+      ===================================================================== */}
+      <div className="fixed bottom-4 left-3 right-3 z-30 max-w-2xl mx-auto pointer-events-none">
+        <div className="pointer-events-auto px-4 py-3 rounded-full bg-zinc-900/90 backdrop-blur-2xl border border-white/[0.12] shadow-[0_20px_50px_rgba(0,0,0,0.85)] flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <StudioLogo business={activeBusiness} size="sm" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-bold font-mono text-white tabular-nums">
+                  {formatPrice(totalPrice)}
+                </span>
+                <span className="text-[10px] font-mono text-zinc-400">
+                  • {formatDuration(totalDurationMinutes)}
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-400 truncate">
+                {selectedServicesList.map((s) => s.title).join(', ') || 'Выберите услуги'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setIsAiChatOpen(true)}
+              className="px-3.5 py-2.5 rounded-full bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.1] text-xs font-medium text-white flex items-center gap-1.5 transition"
+            >
+              <Sparkles className="w-3.5 h-3.5" style={{ color: accentColor }} />
+              <span>ИИ-Консьерж</span>
+            </button>
+
+            <button
+              onClick={scrollToBooking}
+              className="px-4 py-2.5 rounded-full text-xs font-semibold text-[#09090B] shadow-md transition hover:brightness-105"
+              style={{ backgroundColor: accentColor }}
+            >
+              Записаться
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* =====================================================================
+          MODAL: ADD REAL DETAILING WORK PHOTO BY DIRECT URL
+      ===================================================================== */}
+      {showAddWorkPhotoModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-[30px] bg-[#111114] border border-white/[0.12] p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <span
+                  className="text-[10px] font-semibold uppercase tracking-widest block"
+                  style={{ color: accentColor }}
+                >
+                  Пополнение галереи
+                </span>
+                <h3 className="text-lg font-semibold text-white mt-0.5">
+                  Добавить фото работы по ссылке
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowAddWorkPhotoModal(false)}
+                className="p-2 rounded-full bg-white/[0.05] text-zinc-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddPortfolioPhotoByUrl} className="space-y-3.5">
+              <div>
+                <label className="text-xs text-zinc-400 block mb-1">
+                  Прямая ссылка на фотографию (`https://...`) *
+                </label>
+                <input
+                  type="url"
+                  required
+                  placeholder="https://images.unsplash.com/..."
+                  value={workPhotoUrlInput}
+                  onChange={(e) => setWorkPhotoUrlInput(e.target.value)}
+                  className="w-full px-4 py-3 rounded-2xl bg-[#09090B] border border-white/[0.1] text-xs font-mono text-white focus:outline-none focus:border-white/30"
+                />
+              </div>
+
+              {workPhotoUrlInput && (
+                <div className="h-36 rounded-2xl overflow-hidden border border-white/10 bg-[#09090B]">
+                  <img
+                    src={workPhotoUrlInput}
+                    alt="Предпросмотр"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="text-xs text-zinc-400 block mb-1">Марка и модель авто</label>
+                  <input
+                    type="text"
+                    placeholder="Porsche 911 / LiXiang L9"
+                    value={workPhotoCarInput}
+                    onChange={(e) => setWorkPhotoCarInput(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-2xl bg-[#09090B] border border-white/[0.1] text-xs text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-zinc-400 block mb-1">Категория работ</label>
+                  <select
+                    value={workPhotoTagInput}
+                    onChange={(e) => setWorkPhotoTagInput(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-2xl bg-[#09090B] border border-white/[0.1] text-xs text-white"
+                  >
+                    <option value="Детейлинг">Детейлинг</option>
+                    <option value="Полировка и Керамика">Полировка и Керамика</option>
+                    <option value="Бронепленка PPF">Бронепленка PPF</option>
+                    <option value="Химчистка салона">Химчистка салона</option>
+                    <option value="SPA-Мойка">SPA-Мойка</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-zinc-400 block mb-1">Описание выполненной работы</label>
+                <input
+                  type="text"
+                  placeholder="Например: Полная оклейка матовым полиуретаном + керамика"
+                  value={workPhotoTitleInput}
+                  onChange={(e) => setWorkPhotoTitleInput(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-2xl bg-[#09090B] border border-white/[0.1] text-xs text-white"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3.5 rounded-2xl font-semibold text-xs sm:text-sm text-[#09090B] shadow-lg transition hover:brightness-105"
+                style={{ backgroundColor: accentColor }}
+              >
+                Опубликовать в портфолио
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          MODAL: QUICK CHANGE LOGO & HERO PHOTO BY LINK (WITHOUT TOUCHING CODE)
+      ===================================================================== */}
+      {showLogoQuickModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-[30px] bg-[#111114] border border-white/[0.12] p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <StudioLogo business={activeBusiness} size="md" />
+                <div>
+                  <h3 className="text-base font-semibold text-white">
+                    Логотип и Обложка салона
+                  </h3>
+                  <p className="text-xs text-zinc-400">?v={activeBusiness.slug}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowLogoQuickModal(false)}
+                className="p-2 rounded-full bg-white/[0.05] text-zinc-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-zinc-400 block mb-1.5">
+                  Ссылка на логотип (`logoUrl`)
+                </label>
+                <input
+                  type="url"
+                  placeholder="Вставьте прямую ссылку на картинку логотипа..."
+                  value={activeBusiness.logoUrl || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setBusinesses((prev) =>
+                      prev.map((b) =>
+                        b.id === activeBusiness.id ? { ...b, logoUrl: val } : b
+                      )
+                    );
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-[#09090B] border border-white/[0.1] text-xs font-mono text-white"
+                />
+                <span className="text-[11px] text-zinc-500 mt-1 block">
+                  Если оставить поле пустым, отображается фирменная монограмма «{activeBusiness.monogram}».
+                </span>
+              </div>
+
+              <div>
+                <label className="text-xs text-zinc-400 block mb-1.5">
+                  Ссылка на главную фотографию (`hero_image`)
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://..."
+                  value={activeBusiness.hero_image || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setBusinesses((prev) =>
+                      prev.map((b) =>
+                        b.id === activeBusiness.id ? { ...b, hero_image: val } : b
+                      )
+                    );
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-[#09090B] border border-white/[0.1] text-xs font-mono text-white"
+                />
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowLogoQuickModal(false);
+                  showToast('Логотип и обложка сохранены!');
+                }}
+                className="w-full py-3 rounded-2xl font-semibold text-xs sm:text-sm text-[#09090B]"
+                style={{ backgroundColor: accentColor }}
+              >
+                Готово
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          MODAL: STUDIO REGISTRY (?v= DIRECTORY & NEW SALON CREATOR)
+      ===================================================================== */}
+      {showRegistryModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl rounded-[32px] bg-[#111114] border border-white/[0.12] p-6 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
+              <div>
+                <span
+                  className="text-[10px] font-semibold uppercase tracking-widest block"
+                  style={{ color: accentColor }}
+                >
+                  Мульти-тенантная система
+                </span>
+                <h3 className="text-lg sm:text-xl font-semibold text-white mt-0.5">
+                  Реестр подключенных салонов и детейлингов (`?v=`)
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowRegistryModal(false)}
+                className="p-2 rounded-full bg-white/[0.05] text-zinc-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Active Studios List */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {businesses.map((biz) => {
+                const isCurrent = biz.id === activeBusiness.id;
+                return (
+                  <div
+                    key={biz.id}
+                    className={`p-4 rounded-2xl border transition flex items-center justify-between gap-3 ${
+                      isCurrent
+                        ? 'bg-white/[0.07] border-white/25'
+                        : 'bg-[#09090B]/70 border-white/[0.07] hover:border-white/15'
+                    }`}
+                  >
+                    <div
+                      onClick={() => {
+                        handleSwitchTenant(biz.slug);
+                        setShowRegistryModal(false);
+                      }}
+                      className="flex items-center gap-3 min-w-0 cursor-pointer flex-1"
+                    >
+                      <StudioLogo business={biz} size="md" />
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-semibold text-white truncate">
+                          {biz.name}
+                        </h4>
+                        <span className="text-[11px] font-mono text-zinc-400 block">
+                          /?v={biz.slug}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => copyDirectStudioUrl(biz.slug)}
+                      className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-zinc-300"
+                      title="Скопировать ссылку ?v="
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Connect New Salon Form */}
+            <form
+              onSubmit={handleCreateStudioInRegistry}
+              className="p-5 rounded-3xl bg-[#09090B] border border-white/[0.08] space-y-4"
+            >
+              <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                <Plus className="w-4 h-4" style={{ color: accentColor }} />
+                <span>Подключить новый салон / детейлинг в реестр</span>
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  required
+                  placeholder="Название (напр. Royal Detailing)"
+                  value={newStudioForm.name}
+                  onChange={(e) => setNewStudioForm({ ...newStudioForm, name: e.target.value })}
+                  className="px-3.5 py-2.5 rounded-2xl bg-zinc-900 border border-white/10 text-xs text-white"
+                />
+                <input
+                  type="text"
+                  placeholder="Короткий код для ?v= (напр. royal)"
+                  value={newStudioForm.slug}
+                  onChange={(e) => setNewStudioForm({ ...newStudioForm, slug: e.target.value })}
+                  className="px-3.5 py-2.5 rounded-2xl bg-zinc-900 border border-white/10 text-xs font-mono text-white"
+                />
+                <input
+                  type="text"
+                  placeholder="Адрес салона"
+                  value={newStudioForm.address}
+                  onChange={(e) => setNewStudioForm({ ...newStudioForm, address: e.target.value })}
+                  className="px-3.5 py-2.5 rounded-2xl bg-zinc-900 border border-white/10 text-xs text-white"
+                />
+                <input
+                  type="text"
+                  placeholder="Телефон (+7 707 ...)"
+                  value={newStudioForm.phone}
+                  onChange={(e) => setNewStudioForm({ ...newStudioForm, phone: e.target.value })}
+                  className="px-3.5 py-2.5 rounded-2xl bg-zinc-900 border border-white/10 text-xs font-mono text-white"
+                />
+                <input
+                  type="url"
+                  placeholder="Ссылка на логотип (необязательно)"
+                  value={newStudioForm.logoUrl}
+                  onChange={(e) => setNewStudioForm({ ...newStudioForm, logoUrl: e.target.value })}
+                  className="px-3.5 py-2.5 rounded-2xl bg-zinc-900 border border-white/10 text-xs font-mono text-white sm:col-span-2"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 rounded-2xl font-semibold text-xs text-[#09090B]"
+                style={{ backgroundColor: accentColor }}
+              >
+                Создать салон и открыть по ?v=
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          SLIDE-OVER / BOTTOM-SHEET: AI CONCIERGE CHAT
+      ===================================================================== */}
+      {isAiChatOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex justify-end">
+          <div className="w-full max-w-md bg-[#09090B] border-l border-white/[0.1] h-full flex flex-col justify-between shadow-2xl">
+            <div className="p-4 sm:p-5 border-b border-white/[0.08] bg-zinc-900/60 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <StudioLogo business={activeBusiness} size="md" />
+                <div>
+                  <h3 className="text-sm font-semibold text-white">
+                    ИИ-Консьерж • {activeBusiness.shortName || activeBusiness.name}
+                  </h3>
+                  <p className="text-[11px] text-zinc-400">
+                    Подбор свободного бокса и запись в 1 клик
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAiChatOpen(false)}
+                className="p-2 rounded-full bg-white/[0.05] text-zinc-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Quick Prompt Pills */}
+            <div className="px-4 py-2.5 bg-[#09090B] border-b border-white/[0.05] flex items-center gap-2 overflow-x-auto no-scrollbar">
+              {[
+                'Мойка завтра после 18:00',
+                'Полировка + керамика',
+                'Свободные окна на сегодня',
+                'Химчистка салона'
+              ].map((chip) => (
+                <button
+                  key={chip}
+                  onClick={() => handleSendAiMessage(chip)}
+                  className="px-3 py-1.5 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-white/[0.08] text-[11px] text-zinc-200 whitespace-nowrap transition shrink-0"
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {aiMessages.map((m) => (
+                <div
+                  key={m.id}
+                  className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}
+                >
+                  <div
+                    className={`max-w-[88%] rounded-3xl p-4 text-xs sm:text-sm leading-relaxed space-y-3 ${
+                      m.role === 'user'
+                        ? 'text-[#09090B] font-medium rounded-br-md'
+                        : 'bg-zinc-900/90 border border-white/[0.08] text-zinc-100 rounded-bl-md'
+                    }`}
+                    style={m.role === 'user' ? { backgroundColor: accentColor } : {}}
+                  >
+                    <div className="whitespace-pre-line">{m.text}</div>
+
+                    {m.proposal && (
+                      <div className="mt-3 p-4 rounded-2xl bg-[#09090B] border border-white/[0.12] space-y-3">
+                        <div className="flex items-center justify-between border-b border-white/[0.08] pb-2">
+                          <span className="text-[10px] uppercase tracking-wider text-emerald-400 font-semibold">
+                            ✓ Свободное окно
+                          </span>
+                          <span className="text-xs font-mono text-white">
+                            Бокс №{m.proposal.boxNumber}
+                          </span>
+                        </div>
+
+                        <div>
+                          <p className="text-xs font-semibold text-white">
+                            {m.proposal.service.title}
+                          </p>
+                          <p className="text-xs font-mono text-zinc-400 mt-0.5">
+                            {m.proposal.dayLabel} • {m.proposal.startTime}–{m.proposal.endTime}
+                          </p>
+                          <p className="text-sm font-bold font-mono text-white mt-1">
+                            {formatPrice(m.proposal.price)}
+                          </p>
+                        </div>
+
+                        {m.booked ? (
+                          <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-medium flex items-center justify-between">
+                            <span>Запись подтверждена (#{m.bookedTicket?.id})</span>
+                            <Check className="w-4 h-4" />
+                          </div>
+                        ) : (
+                          <div className="space-y-2 pt-1">
+                            <input
+                              type="text"
+                              placeholder="Ваше имя"
+                              value={aiQuickClientName}
+                              onChange={(e) => setAiQuickClientName(e.target.value)}
+                              className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white"
+                            />
+                            <input
+                              type="tel"
+                              placeholder="Телефон"
+                              value={aiQuickClientPhone}
+                              onChange={(e) => setAiQuickClientPhone(formatPhoneMask(e.target.value))}
+                              className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-xs font-mono text-white"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleOneClickAiBooking(m.id, m.proposal)}
+                              className="w-full py-2.5 rounded-xl font-semibold text-xs text-[#09090B] transition"
+                              style={{ backgroundColor: accentColor }}
+                            >
+                              Подтвердить в 1 касание
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {aiLoading && (
+                <div className="flex items-center gap-2 text-xs text-zinc-400 p-3 rounded-2xl bg-zinc-900/50 w-fit">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" style={{ color: accentColor }} />
+                  <span>Проверяю расписание боксов...</span>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendAiMessage();
+              }}
+              className="p-3.5 border-t border-white/[0.08] bg-zinc-900/60 flex items-center gap-2"
+            >
+              <input
+                type="text"
+                placeholder="Напишите желаемую услугу и время..."
+                value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                className="flex-1 px-4 py-3 rounded-full bg-[#09090B] border border-white/[0.1] text-xs sm:text-sm text-white placeholder:text-zinc-500 focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={aiLoading}
+                className="p-3 rounded-full text-[#09090B] shrink-0"
+                style={{ backgroundColor: accentColor }}
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          MODAL: MANUAL BOOKING FOR OWNER
+      ===================================================================== */}
+      {showManualBookingModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-[30px] bg-[#111114] border border-white/[0.12] p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold text-white">Ручная запись гостя</h3>
+              <button
+                onClick={() => setShowManualBookingModal(false)}
+                className="p-2 rounded-full bg-white/[0.05] text-zinc-400"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const srv =
+                  activeServices.find((s) => s.id === manualForm.serviceId) || activeServices[0];
+                const dur = srv ? srv.duration_minutes : 60;
+                const startMin = timeToMinutes(manualForm.startTime);
+                const endStr = minutesToTime(startMin + dur);
+
+                const created = {
+                  id: `MN-${Math.floor(1000 + Math.random() * 9000)}`,
+                  business_id: activeBusiness.id,
+                  service_ids: srv ? [srv.id] : [],
+                  service_titles: srv ? [srv.title] : ['Запись по телефону'],
+                  client_name: manualForm.clientName.trim() || 'Гость по звонку',
+                  client_phone: manualForm.clientPhone.trim() || '+7 (701) 000-00-00',
+                  car_model: manualForm.carModel.trim() || 'Авто гостя',
+                  car_plate: manualForm.carPlate.trim().toUpperCase() || '—',
+                  date: manualForm.date,
+                  start_time: manualForm.startTime,
+                  end_time: endStr,
+                  duration_minutes: dur,
+                  box_number: Number(manualForm.boxNumber) || 1,
+                  total_price: srv ? srv.price : 15000,
+                  source: 'manual',
+                  status: 'Новая'
+                };
+
+                setBookings((prev) => [created, ...prev]);
+                setShowManualBookingModal(false);
+                showToast(`Бокс №${created.box_number} забронирован на ${created.start_time}`);
+              }}
+              className="space-y-3"
+            >
+              <select
+                value={manualForm.serviceId}
+                onChange={(e) => setManualForm({ ...manualForm, serviceId: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-2xl bg-[#09090B] border border-white/10 text-xs text-white"
+              >
+                {activeServices.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.title} ({formatPrice(s.price)})
+                  </option>
+                ))}
+              </select>
+
+              <div className="grid grid-cols-3 gap-2">
+                <input
+                  type="date"
+                  value={manualForm.date}
+                  onChange={(e) => setManualForm({ ...manualForm, date: e.target.value })}
+                  className="px-2.5 py-2 rounded-2xl bg-[#09090B] border border-white/10 text-xs font-mono text-white"
+                />
+                <select
+                  value={manualForm.startTime}
+                  onChange={(e) => setManualForm({ ...manualForm, startTime: e.target.value })}
+                  className="px-2.5 py-2 rounded-2xl bg-[#09090B] border border-white/10 text-xs font-mono text-white"
+                >
+                  {generateTimeSlots(activeBusiness.work_start, activeBusiness.work_end, 30).map(
+                    (t) => (
+                      <option key={t} value={t}>{t}</option>
+                    )
+                  )}
+                </select>
+                <select
+                  value={manualForm.boxNumber}
+                  onChange={(e) =>
+                    setManualForm({ ...manualForm, boxNumber: Number(e.target.value) })
+                  }
+                  className="px-2.5 py-2 rounded-2xl bg-[#09090B] border border-white/10 text-xs font-mono text-white"
+                >
+                  {Array.from({ length: activeBusiness.boxes_count }, (_, i) => i + 1).map((b) => (
+                    <option key={b} value={b}>Бокс №{b}</option>
+                  ))}
+                </select>
+              </div>
+
+              <input
+                type="text"
+                placeholder="Имя гостя"
+                value={manualForm.clientName}
+                onChange={(e) => setManualForm({ ...manualForm, clientName: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-2xl bg-[#09090B] border border-white/10 text-xs text-white"
+              />
+              <input
+                type="tel"
+                placeholder="Телефон"
+                value={manualForm.clientPhone}
+                onChange={(e) =>
+                  setManualForm({ ...manualForm, clientPhone: formatPhoneMask(e.target.value) })
+                }
+                className="w-full px-3.5 py-2.5 rounded-2xl bg-[#09090B] border border-white/10 text-xs font-mono text-white"
+              />
+              <input
+                type="text"
+                placeholder="Марка авто"
+                value={manualForm.carModel}
+                onChange={(e) => setManualForm({ ...manualForm, carModel: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-2xl bg-[#09090B] border border-white/10 text-xs text-white"
+              />
+
+              <button
+                type="submit"
+                className="w-full py-3 rounded-2xl font-semibold text-xs text-[#09090B]"
+                style={{ backgroundColor: accentColor }}
+              >
+                Заблокировать время
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          LIGHTBOX MODAL FOR REAL DETAILING WORKS
+      ===================================================================== */}
+      {lightboxImage && (
+        <div
+          onClick={() => setLightboxImage(null)}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-3xl w-full rounded-[32px] overflow-hidden bg-[#111114] border border-white/[0.12] shadow-2xl"
+          >
+            <img
+              src={lightboxImage.url}
+              alt={lightboxImage.title}
+              className="w-full max-h-[72vh] object-cover"
+            />
+            <div className="p-5 sm:p-6 flex items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-[11px] font-medium px-3 py-0.5 rounded-full"
+                    style={{ backgroundColor: `${accentColor}20`, color: accentColor }}
+                  >
+                    {lightboxImage.tag || 'Детейлинг'}
+                  </span>
+                  {lightboxImage.car && (
+                    <span className="text-xs font-mono text-zinc-400">{lightboxImage.car}</span>
+                  )}
+                </div>
+                <h4 className="text-sm sm:text-base font-semibold text-white mt-1.5">
+                  {lightboxImage.title}
+                </h4>
+              </div>
+              <button
+                onClick={() => setLightboxImage(null)}
+                className="px-4 py-2 rounded-full bg-white/[0.07] hover:bg-white/[0.12] text-xs font-medium text-white shrink-0"
+              >
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
